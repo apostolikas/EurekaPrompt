@@ -6,6 +6,8 @@ import argparse
 import logging
 from eval import evaluate_GSM8K
 import openai
+from prompts import thinking_styles, task_description, mutation_prompts
+
 
 class GenPrompt:
     def __init__(self, args, dataset, model, tokenizer):
@@ -15,6 +17,7 @@ class GenPrompt:
         self.tokenizer = tokenizer
         # self.helper_model = TBD
         # self.helper_tokenizer = TBD
+
 
     def initialise_population(self):
         '''
@@ -29,6 +32,7 @@ class GenPrompt:
 
         return initial_prompts
 
+
     def evaluate_population(self, population, model, tokenizer):
         '''
         This function evaluates the fitness of the populuation by calling 'evaluate_fitness' 
@@ -42,6 +46,7 @@ class GenPrompt:
             fitness_dict[prompt] = self.evaluate_fitness(prompt, model, tokenizer, args)
 
         return fitness_dict
+
 
     def evaluate_fitness(self, prompt, model, tokenizer, args):
         '''
@@ -59,6 +64,8 @@ class GenPrompt:
 
             # Input to the model
 
+
+
             # Output from the model
 
             # Evaluate the output
@@ -70,6 +77,7 @@ class GenPrompt:
         fitness = fitness/num_of_samples
 
         return fitness
+
 
     def select_parents(self, fitness_dict):
         '''
@@ -107,7 +115,7 @@ class GenPrompt:
         Write your new text that is the child of the crossover of the old ones and has a score as high as possible. Keep it short and concise and write only the new text in square brackets.
         '''
 
-        response2 = openai.ChatCompletion.create(
+        response = openai.ChatCompletion.create(
                             engine="gpt35_8K_DSLS_16_6_2023",
                             messages = [ {
                                 "role" : "user",
@@ -120,59 +128,72 @@ class GenPrompt:
                             presence_penalty=0,
                             stop=None)
         
+        child = response.choices[0]['text']
 
-        # Child should be the output of an LLM, which we prompt to do a crossover of the parent prompts
-        
-        children = []
-
-        return children
+        return child
 
 
     def mutate(self, child, population, model, tokenizer):
         '''
-        This function mutates the child to create new prompts. 
+        This function mutates the child with probability 0.5. The population will definitely be mutated.
         The current version supports only the LLM mutation method.
         '''
 
         new_prompts = []
 
-        if self.args.mutation_mode == 'llm':
-
-            mutated_child = mutate_with_LLM(child, model, tokenizer, args) 
+        if random.random() > 0.5:
+            mutated_child = self.mutate_with_LLM(child, model, tokenizer, args) 
             new_prompts.append(mutated_child)
 
-            if self.args.mutate_population:
+        if self.args.mutate_population:
 
-                random_prompts = random.choice(population, k = self.args.number_of_mutations)
-                mutated_prompts = [mutate_with_LLM(prompt, model, tokenizer, args) for prompt in random_prompts]
-                new_prompts.extend(mutated_prompts)
-
-        elif self.args.mutation_mode == 'opro':
-
-            raise NotImplementedError
-
-        elif self.args.mutation_mode == 'refine':
-
-            raise NotImplementedError
+            random_prompts = random.choice(population, k = self.args.number_of_mutations)
+            mutated_prompts = [self.mutate_with_LLM(prompt, model, tokenizer, args) for prompt in random_prompts]
+            new_prompts.extend(mutated_prompts)
         
         return new_prompts
     
+
     def mutate_with_LLM(self, prompt, model, tokenizer, args):
         '''
         This function mutates a prompt with the LLM method.
         '''
-        
+    
+        thinking_styles = random.sample(thinking_styles, 5)
+        task_descriptions = random.sample(task_description, 5)
+
         mutation_prompt = f'''
-        I have some text which consist of a THINKING STYLE and an INSTRUCTION.
+        I have an example text which consist of an INSTRUCTION and a TASK DESCRIPTION and how it is changed.
         text:
-        THINKING STYLE: {random.choice(thinking_styles)} INSTRUCTION: {random.choice(task_description)}
+        INSTRUCTION: {thinking_styles[0]} TASK DESCRIPTION: {task_descriptions[0]}
+        changed text:
+        INSTRUCTION: {thinking_styles[1]} TASK DESCRIPTION: {task_descriptions[1]}
         text:
-        THINKING STYLE: {random.choice(thinking_styles)} INSTRUCTION: {random.choice(task_description)}
-        Modify the prompt to make it more detailed and give your short and concise answer:
-        THINKING STYLE: {random.choice(thinking_styles)} INSTRUCTION: {random.choice(task_description)}
+        INSTRUCTION: {thinking_styles[2]} TASK DESCRIPTION: {task_descriptions[2]}
+        changed text:
+        INSTRUCTION: {thinking_styles[3]} TASK DESCRIPTION: {task_descriptions[3]}
+
+        {random.choice(mutation_prompts)}. Your answer should only be the new  INSTRUCTION and the new TASK DESCRIPTION:
+        INSTRUCTION: {thinking_styles[4]} TASK DESCRIPTION: {task_descriptions[4]}
         '''
 
-        pass
+        response = openai.ChatCompletion.create(
+                            engine="gpt35_8K_DSLS_16_6_2023",
+                            messages = [ {
+                                "role" : "user",
+                                "content" : prompt
+                                        }],
+                            temperature=0.3,
+                            max_tokens=800,
+                            top_p=0.55,
+                            frequency_penalty=0,
+                            presence_penalty=0,
+                            stop=None)
+
+        mutated_prompt = response.choices[0]['text']
+
+        return mutated_prompt
+
 
 if __name__ == "__main__":
 
@@ -183,7 +204,6 @@ if __name__ == "__main__":
     parser.add_argument('--task', default='sst2', type=str, help='task to train on')
     parser.add_argument('--number_of_parents', default=2, type=int, help='number of parents to select')
     parser.add_argument('--number_of_mutations', default=2, type=int, help='number of mutations to perform')
-    parser.add_argument('--mutation_mode', default='llm', type=str, help='mode of mutation')
     parser.add_argument('--mutate_population', action='store_true', help='mutate the population')
     args = parser.parse_args()
     
