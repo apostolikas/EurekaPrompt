@@ -1,5 +1,7 @@
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import T5Tokenizer, T5ForConditionalGeneration
+from tqdm import tqdm
 import random
 import argparse
 import logging
@@ -15,8 +17,6 @@ class GenPrompt:
         self.testset = testset
         self.model = model
         self.tokenizer = tokenizer
-        # self.helper_model = TBD
-        # self.helper_tokenizer = TBD
         self.initial_population = self.initialise_population(self.args)
 
     def initialise_population(self, args):
@@ -62,28 +62,33 @@ class GenPrompt:
         The current version only supports GSM8K and checks whether the final number in the output is the same as the label.
         '''
 
-        if args.use_icl_examples:
-            icl_prompt = construct_icl_examples(self.trainset, self.initial_population, self.args.num_icl_examples)
-
         # Calculate the accuracy
         fitness = 0
         num_of_samples = 100 
 
         samples = self.dataset.shuffle(seed=42).select(range(num_of_samples))
 
-        for i,sample in enumerate(samples):
+        for i,sample in enumerate(tqdm(samples)):
 
-            # Input to the model
-
-
-
-            # Output from the model
-
-            # Evaluate the output
+            question = sample['question']
             label = sample['label']
-            
-            # Update the fitness
-            fitness += evaluate_GSM8K(y_pred, label)
+
+            # Construct the prompt
+            if args.use_icl_examples:
+                icl_prompt = construct_icl_examples(self.trainset, self.initial_population, self.args.num_icl_examples)
+
+            model_input = f'''{icl_prompt}
+            Question: {question}
+            {prompt}
+            '''
+
+            # Import qlora 
+
+            input_ids = tokenizer(model_input, return_tensors="pt").input_ids.to("cuda")
+            generated_ids = model.generate(input_ids, max_length=256)
+            output_text = tokenizer.decode(generated_ids[0], skip_special_tokens=True)
+
+            fitness += evaluate_GSM8K(output_text, label)
 
         fitness = fitness/num_of_samples
 
@@ -214,6 +219,7 @@ if __name__ == "__main__":
     parser.add_argument('--type_of_prompts', default='short', type=str, help='Type of prompts for the initial population')
     parser.add_argument('--use_icl', default=True, type=bool, help='whether to use in-context learning examples or not')
     parser.add_argument('--num_icl_examples', default=3, type=int, help='number of in-context learning examples used for evaluation')
+    parser.add_argument('--num_of_samples', default=100, type=int, help='number of samples used for evaluation')
     parser.add_argument('--iterations', default=1000, type=int, help='number of iterations for the EA')
     parser.add_argument('--number_of_parents', default=2, type=int, help='number of parents to select')
     parser.add_argument('--number_of_mutations', default=2, type=int, help='number of mutations to perform')
@@ -225,10 +231,16 @@ if __name__ == "__main__":
     # tokenizer = AutoTokenizer.from_pretrained("microsoft/Orca-2-13b", device_map = "auto")
     # model = AutoModelForCausalLM.from_pretrained("microsoft/Orca-2-13b", use_fast = True)
     
-    original_test_dataset = load_dataset("gsm8k", 'main', split='test')
-    testset = original_test_dataset.map(add_label)
+    tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-xxl")
+    model = T5ForConditionalGeneration.from_pretrained("google/flan-t5-xxl", device_map = "auto")
 
-    prompt_engine = GenPrompt(args, testset, model, tokenizer)
+    original_test_dataset = load_dataset("gsm8k", 'main', split='test')
+    original_train_dataset = load_dataset("gsm8k", 'main', split='train')
+
+    testset = original_test_dataset.map(add_label)
+    trainset = original_train_dataset.map(add_label)
+
+    prompt_engine = GenPrompt(args, trainset, testset, model, tokenizer)
 
 
     best_fitness = 0
