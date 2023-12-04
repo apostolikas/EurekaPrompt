@@ -37,33 +37,6 @@ mutation_prompts = ["Modify the prompt to make it more detailed",
                      "Mutate the prompt to provide an alternative viewpoint",
                      "Mutate the prompt"]
 
-import random
-from datasets import load_dataset
-
-thinking_styles = random.sample(thinking_styles, 5)
-task_descriptions = random.sample(task_description, 5)
-original_dataset = load_dataset("gsm8k", 'main', split='test')
-
-# Define a function to add the 'label' key to each entry
-def add_label(entry):
-    answer_value = int(entry['answer'].split('####')[1].replace(',', ''))
-    entry['label'] = answer_value
-    return entry
-
-# Use the map method to apply the function to each entry in the dataset
-dataset = original_dataset.map(add_label)
-
-# Take 100 random samples from the dataset
-samples100 = dataset.shuffle(seed=42).select(range(100))
-
-
-prompt = f'''
-{thinking_styles[0]}. {task_description[0]} 
-{samples100[1]['question']}
-'''
-print(prompt)
-
-print(samples100[1]['answer'])
 
 mixed_prompts = [
 "Break down this math problem systematically and provide the solution with a step-by-step mindset.",
@@ -80,16 +53,16 @@ mixed_prompts = [
 
 
 shorter_prompts = [
-"Break down and solve this math problem step by step."
-"Embark on a journey to derive the solution to this math challenge."
-"Methodically compute the answer to this problem with our structured approach."
-"Solve this problem step by step and provide an arabic numeral."
-"Dissect and solve this puzzle, giving the answer as an arabic numeral."
-"Look at this math challenge from multiple perspectives, computing the solution."
-"Break down the problem, calculate, and provide the answer."
-"Visualize the problem, derive the solution step by step, and answer with an arabic numeral."
-"Compute the solution with a calculated, stepwise approach."
-"Embrace a structured thought process, navigate systematically, and give an arabic numeral answer."
+"Break down and solve this math problem step by step.",
+"Embark on a journey to derive the solution to this math challenge.",
+"Methodically compute the answer to this problem with our structured approach.",
+"Solve this problem step by step and provide an arabic numeral.",
+"Dissect and solve this puzzle, giving the answer as an arabic numeral.",
+"Look at this math challenge from multiple perspectives, computing the solution.",
+"Break down the problem, calculate, and provide the answer.",
+"Visualize the problem, derive the solution step by step, and answer with an arabic numeral.",
+"Compute the solution with a calculated, stepwise approach.",
+"Embrace a structured thought process, navigate systematically, and give an arabic numeral answer.",
 ]
 
 shortest_prompts = [
@@ -143,4 +116,3 @@ passive_voice_prompts = [
 "The solution to this problem can be approached in a calculated and stepwise manner.",
 "A structured thought process can be embraced as the problem is navigated, and an arabic numeral answer provided.",
 ]
-
