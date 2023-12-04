@@ -117,3 +117,30 @@ long_prompts = [
 "Approach the solution to this problem in a calculated and stepwise manner. Ensure precision at each stage of computation, navigating through the problem systematically to arrive at a well-thought-out and accurate solution.",
 "Embrace a structured thought process as you navigate through this problem, ensuring a comprehensive analysis of its components. Provide an arabic numeral answer, showcasing your commitment to a detailed and meticulous problem-solving approach.",
 ]
+
+abstract_prompts = [
+"Let's deconstruct the layers of complexity within this mathematical challenge, carefully crafting a step-by-step solution that not only unravels the intricacies of the problem but also emphasizes a meticulous approach to numerical accuracy.",
+"Embark on a thoughtful exploration of this mathematical enigma, dissecting its core elements and intricacies to derive a solution that reflects not just computational prowess but a profound understanding of the underlying mathematical principles.",
+"Our chosen strategy involves a deliberate and systematic computation of the answer, navigating through the mathematical landscape with precision and clarity, ensuring that each step contributes meaningfully to the ultimate resolution of the problem.",
+"In approaching this mathematical puzzle, adopt a methodical and stepwise mindset, intertwining a deep breath with the precision of numerical calculation to unravel the layers of complexity and present a solution in the form of an arabic numeral.",
+"Immerse yourself in a detailed dissection of this mathematical puzzle, methodically analyzing its constituent parts to derive a solution that not only showcases numerical fluency but also a keen eye for the intricacies embedded within the problem.",
+"Adopt a multidimensional perspective in navigating this mathematical challenge, weaving together various angles of approach to compute a solution that is not only methodically derived but also reflects a nuanced understanding of the problem at hand.",
+"Our strategic blueprint involves the careful deconstruction of the problem, breaking it down into manageable components, and navigating through each calculation with a meticulous eye for detail, ultimately arriving at a solution that speaks to clarity and accuracy.",
+"Envision the mathematical landscape before you, carefully deriving the solution step by step with a focus on both the visual and numerical aspects of the problem, culminating in an arabic numeral that encapsulates the comprehensive nature of your problem-solving prowess.",
+"Embark on a calculated journey towards the solution, ensuring each step is taken with precision and purpose, resulting in a methodically derived answer that reflects both the systematic approach and the accuracy of your numerical calculations.",
+"Immerse yourself in a structured thought process as you navigate through this mathematical challenge, extracting insights from each component to present an arabic numeral answer that mirrors not just the solution but the careful consideration given to every facet of the problem.",
+]
+
+passive_voice_prompts = [
+"Let the math problem be systematically broken down and solved step by step.",
+"Allow the solution to this math challenge to be derived on this comprehensive problem-solving journey.",
+"The answer to this problem can be methodically computed with our structured approach.",
+"This problem can be approached with a systematic and step-by-step solution in mind.",
+"The puzzle components can be methodically dissected, and the answer presented as an arabic numeral.",
+"This math challenge can be explored from various perspectives, and the solution computed with a structured thought process.",
+"The strategy involves breaking down the problem into manageable steps, ensuring a clear and accurate solution.",
+"The problem can be visualized to gain a deeper understanding, and the solution derived step by step.",
+"The solution to this problem can be approached in a calculated and stepwise manner.",
+"A structured thought process can be embraced as the problem is navigated, and an arabic numeral answer provided.",
+]
+
