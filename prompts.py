@@ -64,3 +64,56 @@ prompt = f'''
 print(prompt)
 
 print(samples100[1]['answer'])
+
+mixed_prompts = [
+"Break down this math problem systematically and provide the solution with a step-by-step mindset.",
+"Embark on this problem-solving journey, inhaling deeply and exhaling slowly, while deriving the solution to this mathematical challenge.",
+"Methodically work through this problem, computing the answer step by step with our structured approach.",
+"Work on this problem step-by-step, taking a deep breath, and provide an arabic numeral for the following math problem.",
+"Dissect this puzzle methodically, analyze its components, and solve the math problem, giving your answer as an arabic numeral.",
+"Look at this from multiple perspectives and compute the solution to this mathematical challenge in a structured thought process.",
+"Our strategy involves breaking down the problem into manageable steps, so calculate and provide the answer to this math problem.",
+"Visualize the problem and derive the solution with a step-by-step mindset, answering with an arabic numeral for the following math problem.",
+"With a calculated approach, dissect and solve this problem in a stepwise fashion by computing the solution to this mathematical challenge.",
+"Embrace a structured thought process, navigate through the problem systematically, and give your answer as an arabic numeral to this math problem.",
+]
+
+
+shorter_prompts = [
+"Break down and solve this math problem step by step."
+"Embark on a journey to derive the solution to this math challenge."
+"Methodically compute the answer to this problem with our structured approach."
+"Solve this problem step by step and provide an arabic numeral."
+"Dissect and solve this puzzle, giving the answer as an arabic numeral."
+"Look at this math challenge from multiple perspectives, computing the solution."
+"Break down the problem, calculate, and provide the answer."
+"Visualize the problem, derive the solution step by step, and answer with an arabic numeral."
+"Compute the solution with a calculated, stepwise approach."
+"Embrace a structured thought process, navigate systematically, and give an arabic numeral answer."
+]
+
+shortest_prompts = [
+"Solve this math problem step by step.",
+"Derive the solution to this math challenge.",
+"Compute the answer methodically.",
+"Step-by-step solution, provide an arabic numeral.",
+"Dissect and solve, give an arabic numeral.",
+"Approach from multiple perspectives, compute the solution.",
+"Break down, calculate, provide the answer.",
+"Visualize, derive, answer with an arabic numeral.",
+"Compute the solution stepwise.",
+"Embrace a structured approach, give an arabic numeral answer.",
+]
+
+long_prompts = [
+"Let's systematically break down the components of this math problem, examining each step in detail, and provide a solution by meticulously working through the problem with a step-by-step mindset.",
+"Embark on a comprehensive problem-solving journey where you not only derive the solution to this challenging math problem but also delve into the underlying concepts, ensuring a thorough understanding of the mathematical principles at play.",
+"Our approach involves a methodical computation of the answer to this problem, emphasizing precision and accuracy at each stage. Navigate through the problem systematically, adhering to our structured approach to arrive at a clear and well-calculated solution.",
+"Approach this problem with a systematic and step-by-step solution in mind. Take a deep breath, focus on the task at hand, and provide the answer as an arabic numeral, ensuring a meticulous numerical calculation process.",
+"Delve into the intricacies of this puzzle, dissecting its components methodically to arrive at a comprehensive solution. After solving the math problem, present the answer as an arabic numeral, showcasing your attention to detail in both analysis and calculation.",
+"Explore this math challenge from various perspectives, considering different angles and approaches. Compute the solution with a structured thought process, ensuring a comprehensive understanding of the problem and a well-calculated answer.",
+"Our strategy is to break down the problem into manageable steps, ensuring a clear and accurate solution. Calculate each step meticulously and provide the answer, showcasing a detailed and systematic approach to problem-solving.",
+"Visualize the problem to gain a deeper understanding of its intricacies. Derive the solution step by step, paying careful attention to each calculation, and respond with an arabic numeral, reflecting your comprehensive and detailed problem-solving skills.",
+"Approach the solution to this problem in a calculated and stepwise manner. Ensure precision at each stage of computation, navigating through the problem systematically to arrive at a well-thought-out and accurate solution.",
+"Embrace a structured thought process as you navigate through this problem, ensuring a comprehensive analysis of its components. Provide an arabic numeral answer, showcasing your commitment to a detailed and meticulous problem-solving approach.",
+]
