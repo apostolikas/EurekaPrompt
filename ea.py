@@ -1,34 +1,42 @@
-import json
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import random
 import argparse
 import logging
-from eval import evaluate_GSM8K
+from utils import *
+from prompts import *
 import openai
-from prompts import thinking_styles, task_description, mutation_prompts
 
 
 class GenPrompt:
-    def __init__(self, args, dataset, model, tokenizer):
+    def __init__(self, args, trainset, testset, model, tokenizer):
         self.args = args
-        self.dataset = dataset
+        self.trainset = trainset
+        self.testset = testset
         self.model = model
         self.tokenizer = tokenizer
         # self.helper_model = TBD
         # self.helper_tokenizer = TBD
+        self.initial_population = self.initialise_population(self.args)
 
-
-    def initialise_population(self):
+    def initialise_population(self, args):
         '''
         This function initialises the population of prompts.
         The current version suports only prompts that will be created with external tools.
         '''
 
-        task = self.args.task
-
-        with open(f"prompts/{task}.json", "r") as f:
-            initial_prompts = json.load(f)
+        if args.type_of_prompts == 'short':
+            initial_prompts = shorter_prompts
+        elif args.type_of_prompts == 'normal':
+            initial_prompts = mixed_prompts
+        elif args.type_of_prompts == 'long':
+            initial_prompts = long_prompts
+        elif args.type_of_prompts == 'abstract':
+            initial_prompts = abstract_prompts
+        elif args.type_of_prompts == 'passive':
+            initial_prompts = passive_voice_prompts
+        else:
+            raise Exception('This type of prompts is not supported')    
 
         return initial_prompts
 
@@ -53,6 +61,9 @@ class GenPrompt:
         This function evaluates the fitness of a prompt by calculating the accuracy of the model on the dataset.
         The current version only supports GSM8K and checks whether the final number in the output is the same as the label.
         '''
+
+        if args.use_icl_examples:
+            icl_prompt = construct_icl_examples(self.trainset, self.initial_population, self.args.num_icl_examples)
 
         # Calculate the accuracy
         fitness = 0
@@ -200,8 +211,10 @@ if __name__ == "__main__":
     logging.basicConfig(filename='Evol_Algo.log', level = logging.INFO)
 
     parser = argparse.ArgumentParser(description='Settings for the Evolutionary Algorithms')
+    parser.add_argument('--type_of_prompts', default='short', type=str, help='Type of prompts for the initial population')
+    parser.add_argument('--use_icl', default=True, type=bool, help='whether to use in-context learning examples or not')
+    parser.add_argument('--num_icl_examples', default=3, type=int, help='number of in-context learning examples used for evaluation')
     parser.add_argument('--iterations', default=1000, type=int, help='number of iterations for the EA')
-    parser.add_argument('--task', default='sst2', type=str, help='task to train on')
     parser.add_argument('--number_of_parents', default=2, type=int, help='number of parents to select')
     parser.add_argument('--number_of_mutations', default=2, type=int, help='number of mutations to perform')
     parser.add_argument('--mutate_population', action='store_true', help='mutate the population')
@@ -209,25 +222,13 @@ if __name__ == "__main__":
     
 
     # Load the model and tokenizer
-    tokenizer = AutoTokenizer.from_pretrained("microsoft/Orca-2-13b", device_map = "auto")
-    model = AutoModelForCausalLM.from_pretrained("microsoft/Orca-2-13b", use_fast = True)
+    # tokenizer = AutoTokenizer.from_pretrained("microsoft/Orca-2-13b", device_map = "auto")
+    # model = AutoModelForCausalLM.from_pretrained("microsoft/Orca-2-13b", use_fast = True)
     
-    # Load the original dataset
-    original_dataset = load_dataset("gsm8k", 'main', split='test')
+    original_test_dataset = load_dataset("gsm8k", 'main', split='test')
+    testset = original_test_dataset.map(add_label)
 
-    # Define a function to add the 'label' key to each entry
-    def add_label(entry):
-        answer_value = int(entry['answer'].split('####')[1].replace(',', ''))
-        entry['label'] = answer_value
-        return entry
-
-    # Use the map method to apply the function to each entry in the dataset
-    dataset = original_dataset.map(add_label)
-
-    # Take 100 random samples from the dataset
-    samples100 = dataset.shuffle(seed=42).select(range(100))
-
-    prompt_engine = GenPrompt(args)
+    prompt_engine = GenPrompt(args, testset, model, tokenizer)
 
 
     best_fitness = 0
