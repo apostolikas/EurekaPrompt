@@ -9,6 +9,17 @@ from utils import *
 from prompts import *
 import openai
 
+FORMATTER = logging.Formatter("%(asctime)s | %(message)s", "%Y-%m-%d %H:%M:%S")
+
+def setup_logger(name, log_file, level=logging.INFO):
+
+    handler = logging.FileHandler(log_file)        
+    handler.setFormatter(FORMATTER)
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.addHandler(handler)
+    
+    return logger
 
 class GenPrompt:
     def __init__(self, args, trainset, testset, model, tokenizer):
@@ -212,8 +223,8 @@ class GenPrompt:
 
 
 if __name__ == "__main__":
-
-    logging.basicConfig(filename='Evol_Algo.log', level = logging.INFO)
+    
+    logger = setup_logger('progress_logger', 'output.log')
 
     parser = argparse.ArgumentParser(description='Settings for the Evolutionary Algorithms')
     parser.add_argument('--type_of_prompts', default='short', type=str, help='Type of prompts for the initial population')
@@ -247,23 +258,30 @@ if __name__ == "__main__":
     stagnation_count = 0
     patience = 5
 
-    for iter in args.iterations:
+    for iter in range(args.iterations):
 
         if iter == 0:
+            logger.info(f"Evaluation of the initial population")
             population = prompt_engine.initialise_population(args)
             fitness_dict = prompt_engine.evaluate_population(population)
+            for prompt in population:
+                logger.info(f"Generation {iter}: {prompt} with fitness {fitness_dict[prompt]}")
+            logger.info(f"Genetic Algorithms starts")
 
         else:
             
             parents = prompt_engine.select_parents(fitness_dict)
             children = prompt_engine.crossover(parents, model, tokenizer)
-
+            logger.info(f"Generation {iter}: {children} with fitness {fitness_dict[children]}")
             fitness_dict.update(prompt_engine.evaluate_population(children))
             population.extend(children)
             new_prompts = prompt_engine.mutate(children)
             fitness_dict.update(prompt_engine.evaluate_population(new_prompts))
-            population.extend(new_prompts)
 
+            for prompt in new_prompts:
+                logger.info(f"Generation {iter}: {prompt} with fitness {fitness_dict[prompt]}")
+
+            population.extend(new_prompts)
             best_prompt = max(fitness_dict, key = fitness_dict.get)
             current_best_fitness = fitness_dict[best_prompt]
 
@@ -274,10 +292,10 @@ if __name__ == "__main__":
             else:
                 stagnation_count += 1
 
-            logging.info(f"Generation {iter}: Best Fitness = {best_fitness}, Best Prompt = {best_prompt}")
+            logger.info(f"Generation {iter}: Best prompt: {best_prompt} with fitness {best_fitness}")
 
             if stagnation_count >= patience:
-                logging.info(f"Converged at generation {iter} with best fitness {best_fitness} and best prompt {best_prompt}")
+                logger.info(f"Converged at generation {iter} with best prompt: {best_prompt} with fitness {best_fitness}")
                 break
 
 
