@@ -34,9 +34,7 @@ mutation_prompts = ["Modify the prompt to make it more detailed",
                      "Generate a mutated version of the prompt by adding more details",
                      "Use unconventional thinking and create a mutated version of the prompt",
                      "Generate a version of the prompt that introduces an element of surprise",
-                     "Mutate the prompt to provide an alternative viewpoint",
-                     "Mutate the prompt"]
-
+                     "Mutate the prompt to provide an alternative viewpoint",]
 
 mixed_prompts = [
 "Break down this math problem systematically and provide the solution with a step-by-step mindset.",
