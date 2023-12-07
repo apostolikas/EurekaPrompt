@@ -1,27 +1,46 @@
 thinking_styles = ["Let's think step by step",
                    "Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step",
-                   "Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer",
+                   "Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and common sense), solve the problem step by step, and show the answer",
                    "Let's work this out in a step by step way to be sure we have the right answer",
                    "Take a deep breath and work on this problem step-by-step",
                    "Let's break this down step-by-step", 
+                   "Let's first understand the relationship between the variables and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step",
+                   "Take a breath and focus on the task",
+                   "Let's be very precise and accurate in our calculations",
+                   "Let's be very precise, because this is very important",
+                   "If you find the correct answer, you will be rewarded",
+                   "Inhale, exhale and find the correct answer",
+                   "This is very important, so do your best",
+                   "Take a deep breath, understand the problem, devise a plan to solve it, and then carry out the plan",
+                   "We can not afford to make a mistake here",
+                   "DO NOT GET THIS WRONG PLEASE",
+                   "Use an abstract and unconventional thinking style",
                    "Let's look at this from multiple perspectives",
                    "Let's visualize the problem",
                    "Inhale deeply, exhale slowly, and embark on this problem-solving journey with a step-by-step mindset",
+                   "Derive the solution by dividing and conquering",
+                   "Let's divide and conquer",
+                   "Let's break this down into smaller parts and solve each part separately",
+                   "Let's start with the desired outcome and work backwards",
+                   "Create visual diagrams that represent the relationships between different aspects of the problem",
+                   "Draw parallels between the current problem and similar problems that have been solved before"
+                   "Let's create a simplified version or model of the problem to gain insights and test potential solutions",
                    "Let's dissect this puzzle, analyzing its components methodically to arrive at a coherent solution",
+                   "Let's focus on the big picture and then work our way down to the details",
+                   "Let's focus on logic and reasoning to arrive at a well-considered solution."
+                   "Let's use holistic thinking",
+                   "Let's use analogical thinking and draw parallels between the current problem and similar problems that have been solved before",
                    "Let's embrace a structured thought process, navigating through the problem systematically",
                    "Our strategy involves breaking down the problem into manageable steps, ensuring a clear and accurate solution",
                    "Our approach will be to methodically work through the problem, ensuring accuracy at each step to derive the correct answer",
-                   "With a calculated approach, let's dissect and solve this problem in a stepwise fashion"]
+                   "With a calculated approach, let's dissect and solve in a stepwise fashion"]
 
-task_description = ["Solve this math problem:",
-                    "Derive the solution to this math problem:",
-                    "Calculate the answer to this math problem:",
-                    "Compute the answer to this math problem:",
-                    "Compute the solution:",
-                    "Give the answer to this math problem:",
+task_description = ["Solve this math problem.",
+                    "Derive the solution to this math problem.",
+                    "Calculate the answer to this math problem.",
+                    "Compute the solution.",
                     "Give your answer as an arabic numeral:",
-                    "Provide an arabic numeral for the following math problem:",
-                    "Answer with an arabic numeral the following math problem:",]
+                    "Answer with an arabic numeral the following math problem.",]
 
 mutation_prompts = ["Modify the prompt to make it more detailed",
                      "Improve the prompt by adding helpful advice",
@@ -35,6 +54,9 @@ mutation_prompts = ["Modify the prompt to make it more detailed",
                      "Use unconventional thinking and create a mutated version of the prompt",
                      "Generate a version of the prompt that introduces an element of surprise",
                      "Mutate the prompt to provide an alternative viewpoint",]
+
+
+
 
 mixed_prompts = [
 "Break down this math problem systematically and provide the solution with a step-by-step mindset.",
