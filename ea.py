@@ -1,25 +1,31 @@
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from transformers import T5Tokenizer, T5ForConditionalGeneration
 from tqdm import tqdm
 import random
 import argparse
 import logging
 from utils import *
-from prompts import *
-import openai
+from prompts.math_prompts import *
+from prompts.nli_prompts import *
+from prompts.open_qa_prompts import *
+import numpy as np
+import faiss
 
-FORMATTER = logging.Formatter("%(asctime)s | %(message)s", "%Y-%m-%d %H:%M:%S")
 
 def setup_logger(name, log_file, level=logging.INFO):
+    '''
+    This function sets up the logger.
+    '''
 
+    formatter = logging.Formatter("%(asctime)s | %(message)s", "%Y-%m-%d %H:%M:%S")
     handler = logging.FileHandler(log_file)        
-    handler.setFormatter(FORMATTER)
+    handler.setFormatter(formatter)
     logger = logging.getLogger(name)
     logger.setLevel(level)
     logger.addHandler(handler)
     
     return logger
+
 
 class GenPrompt:
     def __init__(self, args, trainset, testset, model, tokenizer):
@@ -29,6 +35,7 @@ class GenPrompt:
         self.model = model
         self.tokenizer = tokenizer
         self.initial_population = self.initialise_population(self.args)
+        self.helper_model = AutoModelForCausalLM.from_pretrained("TheBloke/OpenHermes-2.5-Mistral-7B-GGUF", model_file="./openhermes-2.5-mistral-7b.Q4_K_M.gguf", model_type="mistral")
 
     def initialise_population(self, args):
         '''
@@ -36,23 +43,35 @@ class GenPrompt:
         The current version suports only prompts that will be created with external tools.
         '''
 
-        if args.type_of_prompts == 'short':
-            initial_prompts = shorter_prompts
-        elif args.type_of_prompts == 'normal':
-            initial_prompts = mixed_prompts
-        elif args.type_of_prompts == 'long':
-            initial_prompts = long_prompts
-        elif args.type_of_prompts == 'abstract':
-            initial_prompts = abstract_prompts
-        elif args.type_of_prompts == 'passive':
-            initial_prompts = passive_voice_prompts
-        else:
-            raise Exception('This type of prompts is not supported')    
+        if args.task == 'gsm8k':
+            if args.type_of_prompts == 'short':
+                initial_prompts = shorter_prompts
+            elif args.type_of_prompts == 'normal':
+                initial_prompts = mixed_prompts
+            elif args.type_of_prompts == 'long':
+                initial_prompts = long_prompts
+            elif args.type_of_prompts == 'abstract':
+                initial_prompts = abstract_prompts
+            elif args.type_of_prompts == 'passive':
+                initial_prompts = passive_voice_prompts
+            else:
+                initial_prompts = []
+                for task in task_description:
+                    for style in thinking_styles:
+                        prompt = f"{task}\n{style}."
+                        initial_prompts.append(prompt)     
+        
+        elif args.task == 'nli' or args.task == 'open_qa':
+            initial_prompts = []
+            for task in task_description:
+                for style in thinking_styles:
+                    prompt = f"{task}.\n{style}."
+                    initial_prompts.append(prompt)
 
         return initial_prompts
 
 
-    def evaluate_population(self, population, model, tokenizer):
+    def evaluate_population(self, population):
         '''
         This function evaluates the fitness of the populuation by calling 'evaluate_fitness' 
         for each prompt of the population.
@@ -62,12 +81,12 @@ class GenPrompt:
 
         for prompt in population:
 
-            fitness_dict[prompt] = self.evaluate_fitness(prompt, model, tokenizer, args)
+            fitness_dict[prompt] = self.evaluate_fitness(prompt)
 
         return fitness_dict
 
 
-    def evaluate_fitness(self, prompt, model, tokenizer, args):
+    def evaluate_fitness(self, prompt):
         '''
         This function evaluates the fitness of a prompt by calculating the accuracy of the model on the dataset.
         The current version only supports GSM8K and checks whether the final number in the output is the same as the label.
@@ -85,21 +104,28 @@ class GenPrompt:
             label = sample['label']
 
             # Construct the prompt
-            if args.use_icl_examples:
+            if self.args.use_icl_examples:
                 icl_prompt = construct_icl_examples(self.trainset, self.initial_population, self.args.num_icl_examples)
+                model_input = f'''{icl_prompt}
+                Question: {question}
+                {prompt}
+                '''
+            
+            else:
+                model_input = f'''Question: {question}
+                {prompt}
+                '''
 
-            model_input = f'''{icl_prompt}
-            Question: {question}
-            {prompt}
-            '''
+            system_message = "You are Orca, an AI language model created by Microsoft. You are a cautious assistant. You carefully follow instructions in order to solve math problems."
 
-            # Import qlora 
+            prompt = f"<|im_start|>system\n{system_message}<|im_end|>\n<|im_start|>user\n{model_input}<|im_end|>\n<|im_start|>assistant"
 
-            input_ids = tokenizer(model_input, return_tensors="pt").input_ids.to("cuda")
-            generated_ids = model.generate(input_ids, max_length=256)
-            output_text = tokenizer.decode(generated_ids[0], skip_special_tokens=True)
+            input_ids = self.tokenizer(prompt, return_tensors='pt').input_ids.to("cuda")
 
-            fitness += evaluate_GSM8K(output_text, label)
+            output_ids = self.model.generate(input_ids)
+            text_output = self.tokenizer.batch_decode(output_ids)[0]
+
+            fitness += evaluate_GSM8K(text_output, label)
 
         fitness = fitness/num_of_samples
 
@@ -124,7 +150,7 @@ class GenPrompt:
         return parents
 
 
-    def crossover(self, parents, model, tokenizer):
+    def crossover(self, parents):
         '''
         This function performs crossover between the parents to create a child.
         For now it will only support only the LLM crossover method.
@@ -133,7 +159,7 @@ class GenPrompt:
         parent_prompt1 = parents[0]
         parent_prompt2 = parents[1]
 
-        prompt = f'''
+        crossover_prompt = f'''
         I have two parent prompts for an evolutionary algorithm.
         text:
         {parent_prompt1}
@@ -142,25 +168,12 @@ class GenPrompt:
         Write your new text that is the child of the crossover of the old ones and has a score as high as possible. Keep it short and concise and write only the new text in square brackets.
         '''
 
-        response = openai.ChatCompletion.create(
-                            engine="gpt35_8K_DSLS_16_6_2023",
-                            messages = [ {
-                                "role" : "user",
-                                "content" : prompt
-                                        }],
-                            temperature=0.3,
-                            max_tokens=800,
-                            top_p=0.55,
-                            frequency_penalty=0,
-                            presence_penalty=0,
-                            stop=None)
-        
-        child = response.choices[0]['text']
+        child_prompt = self.helper_model(crossover_prompt)
 
-        return child
+        return child_prompt
 
 
-    def mutate(self, child, population, model, tokenizer):
+    def mutate(self, child, population):
         '''
         This function mutates the child with probability 0.5. The population will definitely be mutated.
         The current version supports only the LLM mutation method.
@@ -169,57 +182,79 @@ class GenPrompt:
         new_prompts = []
 
         if random.random() > 0.5:
-            mutated_child = self.mutate_with_LLM(child, model, tokenizer, args) 
+            mutated_child = self.mutate_with_LLM(child) 
             new_prompts.append(mutated_child)
 
         if self.args.mutate_population:
 
             random_prompts = random.choice(population, k = self.args.number_of_mutations)
-            mutated_prompts = [self.mutate_with_LLM(prompt, model, tokenizer, args) for prompt in random_prompts]
+            mutated_prompts = [self.mutate_with_LLM(prompt) for prompt in random_prompts]
             new_prompts.extend(mutated_prompts)
         
         return new_prompts
     
 
-    def mutate_with_LLM(self, prompt, model, tokenizer, args):
+    def mutate_with_LLM(self, prompt):
         '''
         This function mutates a prompt with the LLM method.
         '''
     
-        thinking_styles = random.sample(thinking_styles, 5)
-        task_descriptions = random.sample(task_description, 5)
+        if self.args.mutation_type == 'separate':
 
-        mutation_prompt = f'''
-        I have an example text which consist of an INSTRUCTION and a TASK DESCRIPTION and how it is changed.
-        text:
-        INSTRUCTION: {thinking_styles[0]} TASK DESCRIPTION: {task_descriptions[0]}
-        changed text:
-        INSTRUCTION: {thinking_styles[1]} TASK DESCRIPTION: {task_descriptions[1]}
-        text:
-        INSTRUCTION: {thinking_styles[2]} TASK DESCRIPTION: {task_descriptions[2]}
-        changed text:
-        INSTRUCTION: {thinking_styles[3]} TASK DESCRIPTION: {task_descriptions[3]}
+            thinking_styles = random.sample(thinking_styles, 5)
+            task_descriptions = random.sample(task_description, 5)
 
-        {random.choice(mutation_prompts)}. Your answer should only be the new  INSTRUCTION and the new TASK DESCRIPTION:
-        INSTRUCTION: {thinking_styles[4]} TASK DESCRIPTION: {task_descriptions[4]}
-        '''
+            mutation_prompt = f'''
+            I have an example text which consist of an INSTRUCTION and a TASK DESCRIPTION and how it is changed.
+            text:
+            INSTRUCTION: {thinking_styles[0]} TASK DESCRIPTION: {task_descriptions[0]}
+            changed text:
+            INSTRUCTION: {thinking_styles[1]} TASK DESCRIPTION: {task_descriptions[1]}
+            text:
+            INSTRUCTION: {thinking_styles[2]} TASK DESCRIPTION: {task_descriptions[2]}
+            changed text:
+            INSTRUCTION: {thinking_styles[3]} TASK DESCRIPTION: {task_descriptions[3]}
 
-        response = openai.ChatCompletion.create(
-                            engine="gpt35_8K_DSLS_16_6_2023",
-                            messages = [ {
-                                "role" : "user",
-                                "content" : prompt
-                                        }],
-                            temperature=0.3,
-                            max_tokens=800,
-                            top_p=0.55,
-                            frequency_penalty=0,
-                            presence_penalty=0,
-                            stop=None)
+            {random.choice(mutation_prompts)}. Your answer should only be the new  INSTRUCTION and the new TASK DESCRIPTION:
+            INSTRUCTION: {thinking_styles[4]} TASK DESCRIPTION: {task_descriptions[4]}
+            '''
 
-        mutated_prompt = response.choices[0]['text']
+        elif self.args.mutation_type == 'mixed':
+
+            mutation_prompt = f'''
+            I have some texts with their mutated versions. A mutation is a change in the original text.
+            text:
+            {random.choice(shorter_prompts)}
+            mutated text:
+            {random.choice(abstract_prompts)}
+            text:
+            {random.choice(long_prompts)}
+            changed text:
+            {random.choice(shortest_prompts)}
+
+            {random.choice(mutation_prompts)}. Your answer should only be the new mutated text:
+            {prompt}
+            '''   
+            
+
+        mutated_prompt = self.helper_model(mutation_prompt)
 
         return mutated_prompt
+    
+
+    def build_prompt_index(self, prompts, tokenizer):
+        '''
+        This function builds a faiss index with the prompts of the initial population.
+        '''
+
+        prompt_embeddings = [tokenizer(prompt, return_tensors="pt")["input_ids"] for prompt in prompts]
+
+        prompt_embeddings = np.array(prompt_embeddings)
+
+        index = faiss.IndexFlatL2(prompt_embeddings[0].shape[1])
+        index.add(prompt_embeddings)
+
+        return index
 
 
 if __name__ == "__main__":
@@ -227,6 +262,7 @@ if __name__ == "__main__":
     logger = setup_logger('progress_logger', 'output.log')
 
     parser = argparse.ArgumentParser(description='Settings for the Evolutionary Algorithms')
+    parser.add_argument('--task', default='gsm8k', type=str, help='Task to be solved. Choose one of: [gsm8k, nli, open_qa]')
     parser.add_argument('--type_of_prompts', default='short', type=str, help='Type of prompts for the initial population')
     parser.add_argument('--use_icl', default=True, type=bool, help='whether to use in-context learning examples or not')
     parser.add_argument('--num_icl_examples', default=3, type=int, help='number of in-context learning examples used for evaluation')
@@ -238,13 +274,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
 
-    # Load the model and tokenizer
-    # tokenizer = AutoTokenizer.from_pretrained("microsoft/Orca-2-13b", device_map = "auto")
-    # model = AutoModelForCausalLM.from_pretrained("microsoft/Orca-2-13b", use_fast = True)
-    
-    tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-xxl")
-    model = T5ForConditionalGeneration.from_pretrained("google/flan-t5-xxl", device_map = "auto")
+    model = AutoModelForCausalLM.from_pretrained("microsoft/Orca-2-7b", device_map = 'auto', load_in_8bit = True)
+    tokenizer = AutoTokenizer.from_pretrained("microsoft/Orca-2-7b", use_fast = False)
 
+    #TODO add the other datasets
     original_test_dataset = load_dataset("gsm8k", 'main', split='test')
     original_train_dataset = load_dataset("gsm8k", 'main', split='train')
 
@@ -252,7 +285,6 @@ if __name__ == "__main__":
     trainset = original_train_dataset.map(add_label)
 
     prompt_engine = GenPrompt(args, trainset, testset, model, tokenizer)
-
 
     best_fitness = 0
     stagnation_count = 0
@@ -263,7 +295,9 @@ if __name__ == "__main__":
         if iter == 0:
             logger.info(f"Evaluation of the initial population")
             population = prompt_engine.initialise_population(args)
+            prompt_index = prompt_engine.build_prompt_index(population, tokenizer)
             fitness_dict = prompt_engine.evaluate_population(population)
+
             for prompt in population:
                 logger.info(f"Generation {iter}: {prompt} with fitness {fitness_dict[prompt]}")
             logger.info(f"Genetic Algorithms starts")
@@ -272,6 +306,8 @@ if __name__ == "__main__":
             
             parents = prompt_engine.select_parents(fitness_dict)
             children = prompt_engine.crossover(parents, model, tokenizer)
+
+            distances, indices = prompt_index.search(tokenizer(children, return_tensors="pt")["input_ids"], 2) 
             logger.info(f"Generation {iter}: {children} with fitness {fitness_dict[children]}")
             fitness_dict.update(prompt_engine.evaluate_population(children))
             population.extend(children)
