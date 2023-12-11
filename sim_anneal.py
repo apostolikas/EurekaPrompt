@@ -3,10 +3,13 @@ import math
 from utils import *
 import argparse
 import logging
-from prompts import *
+from prompts.math_prompts import *
+from prompts.nli_prompts import *
+from prompts.open_qa_prompts import *
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from tqdm import tqdm
+
 
 class SimAnneal:
     def __init__(self, args, trainset, testset, model, tokenizer):
@@ -17,6 +20,7 @@ class SimAnneal:
         self.tokenizer = tokenizer        
         self.logger = logging.basicConfig(filename='Simulated_Annealing.log', level = logging.INFO)
         self.prompt_pool = self.construct_prompt_pool()
+        self.helper_model = AutoModelForCausalLM.from_pretrained("TheBloke/OpenHermes-2.5-Mistral-7B-GGUF", model_file="./openhermes-2.5-mistral-7b.Q4_K_M.gguf", model_type="mistral")
 
     def construct_prompt_pool(self):
         '''
@@ -60,14 +64,16 @@ class SimAnneal:
             Question: {question}
             {prompt}
             '''
+            system_message = "You are Orca, an AI language model created by Microsoft. You are a cautious assistant. You carefully follow instructions in order to solve math problems."
 
-            # Import qlora 
+            prompt = f"<|im_start|>system\n{system_message}<|im_end|>\n<|im_start|>user\n{model_input}<|im_end|>\n<|im_start|>assistant"
 
-            input_ids = self.tokenizer(model_input, return_tensors="pt").input_ids.to("cuda")
-            generated_ids = self.model.generate(input_ids, max_length=256)
-            output_text = self.tokenizer.decode(generated_ids[0], skip_special_tokens=True)
+            input_ids = self.tokenizer(prompt, return_tensors='pt').input_ids.to("cuda")
+
+            output_ids = self.model.generate(input_ids)
+            text_output = self.tokenizer.batch_decode(output_ids)[0]
             
-            score += evaluate_GSM8K(output_text, label)
+            score += evaluate_GSM8K(text_output, label)
 
         score = score/num_of_samples
         return score
@@ -77,7 +83,7 @@ class SimAnneal:
         '''
         Function to generate a neighboring solution by perturbing the prompt using an LLM.
         '''
-            
+        # Have to change it to remember 2 previous prompts and then use OPRO to generate a new prompt #  
         samples = self.trainset.shuffle(seed=42).select(range(2))
         questions = samples['question']
         labels = samples['label']
@@ -113,7 +119,7 @@ class SimAnneal:
         Write your new text that is different from the old ones and has a score as high as possible. Write the text in square brackets.
         '''
 
-        new_prompt = " "
+        new_prompt = self.helper_model(perturb_prompt)
 
         return new_prompt
     
@@ -124,51 +130,49 @@ class SimAnneal:
         {prompt}
         '''
 
-        # pass it to the model and get an output 
-
-        new_prompt = " "
+        new_prompt = self.helper_model(perturb_prompt)
 
         return new_prompt
 
 
 
-    def run_normal_simulated_annealing(self, initial_prompt):
-        '''
-        This function runs the simulated annealing algorithm to optimize the prompt.
-        '''
+    # def run_normal_simulated_annealing(self, initial_prompt):
+    #     '''
+    #     This function runs the simulated annealing algorithm to optimize the prompt.
+    #     '''
 
-        current_prompt = initial_prompt
-        best_prompt = initial_prompt
-        temperature = self.args.initial_temperature
+    #     current_prompt = initial_prompt
+    #     best_prompt = initial_prompt
+    #     temperature = self.args.initial_temperature
 
-        while temperature > 1.0:
+    #     while temperature > 1.0:
 
-            for _ in range(self.args.iterations_per_temperature):
+    #         for _ in range(self.args.iterations_per_temperature):
 
-                neighbor_prompt = self.generate_neighboring_solution_with_LLM(current_prompt)
+    #             neighbor_prompt = self.generate_neighboring_solution_with_LLM(current_prompt)
 
-                current_score = self.evaluate(current_prompt, self.args.num_of_samples)
-                neighbor_score = self.evaluate(neighbor_prompt, self.args.num_of_samples)
+    #             current_score = self.evaluate(current_prompt, self.args.num_of_samples)
+    #             neighbor_score = self.evaluate(neighbor_prompt, self.args.num_of_samples)
 
-                # Metropolis criterion
-                if neighbor_score > current_score or random.uniform(0, 1) < math.exp((neighbor_score - current_score) / temperature):
-                    current_prompt = neighbor_prompt
+    #             # Metropolis criterion
+    #             if neighbor_score > current_score or random.uniform(0, 1) < math.exp((neighbor_score - current_score) / temperature):
+    #                 current_prompt = neighbor_prompt
 
-                    # Update the best prompt if needed
-                    if neighbor_score > self.evaluate(best_prompt, self.args.num_of_samples):
-                        best_prompt = neighbor_prompt
-                        best_score = neighbor_score
+    #                 # Update the best prompt if needed
+    #                 if neighbor_score > self.evaluate(best_prompt, self.args.num_of_samples):
+    #                     best_prompt = neighbor_prompt
+    #                     best_score = neighbor_score
 
                 
-            self.logger.info("After {} iterations at temperature {}, the best prompt is {} with score {}".format(self.args.iterations_per_temperature, temperature, best_prompt, best_score))
+    #         self.logger.info("After {} iterations at temperature {}, the best prompt is {} with score {}".format(self.args.iterations_per_temperature, temperature, best_prompt, best_score))
 
-            temperature *= self.args.cooling_rate
+    #         temperature *= self.args.cooling_rate
 
-            self.logger.info("Temperature is now {}".format(temperature))
+    #         self.logger.info("Temperature is now {}".format(temperature))
 
-        self.logger.info("The best prompt is {} with score {}".format(best_prompt, best_score))
+    #     self.logger.info("The best prompt is {} with score {}".format(best_prompt, best_score))
 
-        return best_prompt, best_score
+    #     return best_prompt, best_score
     
 
     def run_boosted_simulated_annealing(self, initial_prompt):
