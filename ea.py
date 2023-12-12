@@ -105,12 +105,20 @@ class GenPrompt:
 
             # Construct the prompt
             if self.args.use_icl_examples:
-                icl_prompt = construct_icl_examples(self.trainset, self.initial_population, self.args.num_icl_examples)
-                model_input = f'''{icl_prompt}
-                Question: {question}
-                {prompt}
-                '''
-            
+
+                if self.args.use_contrastive_cot:
+                    contrastive_prompt = construct_contrastive_icl_example(contrastive_samples, self.args.num_icl_examples)
+                    model_input = f'''{contrastive_prompt}
+                    Question: {question}
+                    {prompt}
+                    '''
+                else:
+                    icl_prompt = construct_icl_examples(self.trainset, self.initial_population, self.args.num_icl_examples)
+                    model_input = f'''{icl_prompt}
+                    Question: {question}
+                    {prompt}
+                    '''
+          
             else:
                 model_input = f'''Question: {question}
                 {prompt}
@@ -255,7 +263,7 @@ class GenPrompt:
         index.add(prompt_embeddings)
 
         return index
-
+    
 
 if __name__ == "__main__":
     
@@ -264,6 +272,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Settings for the Evolutionary Algorithms')
     parser.add_argument('--task', default='gsm8k', type=str, help='Task to be solved. Choose one of: [gsm8k, nli, open_qa]')
     parser.add_argument('--type_of_prompts', default='short', type=str, help='Type of prompts for the initial population')
+    parser.add_argument('--use_contrastive_cot', default=True, type=bool, help='whether to use contrastive cot in-context learning examples or not')
     parser.add_argument('--use_icl', default=True, type=bool, help='whether to use in-context learning examples or not')
     parser.add_argument('--num_icl_examples', default=3, type=int, help='number of in-context learning examples used for evaluation')
     parser.add_argument('--num_of_samples', default=100, type=int, help='number of samples used for evaluation')
