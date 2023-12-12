@@ -136,3 +136,49 @@ passive_voice_prompts = [
 "The solution to this problem can be approached in a calculated and stepwise manner.",
 "A structured thought process can be embraced as the problem is navigated, and an arabic numeral answer provided.",
 ]
+
+
+contrastive_samples = [
+    {
+        "question": "There are 15 trees in the grove. Grove workers will plant trees in the grove today. After they are done, there will be 21 trees. How many trees did the grove workers plant today?",
+        "explanation": "There are 15 trees originally. Then there were 21 trees after the Grove workers planted some more. So there must have been 21 - 15 = 6 trees that were planted.",
+        "answer": "6",
+        "wrong_explanation": "There are 21 - 15 = 6 trees originally. Then there were 15 trees after the Grove workers planted some more. So there must have been 21 trees that were planted.",
+        "wrong_answer": "21"
+    },
+    {
+        "question": "If there are 3 cars in the parking lot and 2 more cars arrive, how many cars are in the parking lot?",
+        "explanation": "There are originally 3 cars. Then 2 more cars arrive. Now 3 + 2 = 5 cars are in the parking lot.",
+        "answer": "5",
+        "wrong_explanation": "There are originally 3 + 2 = 5 cars. Then 3 more cars arrive. Now 2 cars are in the parking lot.",
+        "wrong_answer": "2"
+    },
+    {
+        "question": "Leah had 32 chocolates and her sister had 42. If they ate 35, how many pieces do they have left in total?",
+        "explanation": "Originally, Leah had 32 chocolates and her sister had 42. So in total they had 32 + 42 = 74. After eating 35, they had 74 - 35 = 39 pieces left in total.",
+        "answer": "39",
+        "wrong_explanation": "Originally, Leah had 32 + 42 = 74 chocolates and her sister had 32. So in total they had 74 - 35 = 39. After eating 35, they had 42 pieces left in total.",
+        "wrong_answer": "42"
+    },
+    {
+        "question": "Jason had 20 lollipops. He gave Denny some lollipops. Now Jason has 12 lollipops. How many lollipops did Jason give to Denny?",
+        "explanation": "Jason had 20 lollipops originally. Then he had 12 after giving some to Denny. So he gave Denny 20 - 12 = 8 lollipops.",
+        "answer": "8",
+        "wrong_explanation": "Jason had 20 - 12 = 8 lollipops originally. Then he had 20 after giving some to Denny. So he gave Denny 12 lollipops.",
+        "wrong_answer": "12"
+    },
+    {
+        "question": "James writes a 3-page letter to 2 different friends twice a week. How many pages does he write a year?",
+        "explanation": "He writes each friend 3*2=6 pages a week. So he writes 6*2=12 pages every week. That means he writes 12*52=624 pages a year.",
+        "answer": "624",
+        "wrong_explanation": "He writes each friend 12*52=624 pages a week. So he writes 3*2=6 pages every week. That means he writes 6*2=12 pages a year.",
+        "wrong_answer": "12"
+    },
+    {
+        "question": "Henry made two stops during his 60-mile bike trip. He first stopped after 20 miles. His second stop was 15 miles before the end of the trip. How many miles did he travel between his first and second stops?",
+        "explanation" : "Henry traveled a total of 60 miles on his bike trip. His second stop was 15 miles before the end of the trip, so he had already traveled 60 - 15 = 45 miles. His first stop was after 20 miles, so he traveled 45 - 20 = 25 miles between his first and second stops.",
+        "answer" : "25",
+        "wrong_explanation": "Henry traveled a total of 60 miles on his bike trip. His first stop was after 20 miles, so he traveled 20 miles between his starting point and his first stop. His second stop was 15 miles before the end of the trip, so he traveled 60 - 15 = 45 miles between his second stop and the end of the trip. Therefore, he traveled a total of 20 + 45 = 65 miles between his first and second stops.",
+        "wrong_answer" : "65"
+    },
+]
