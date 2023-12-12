@@ -58,12 +58,25 @@ class SimAnneal:
 
             # Construct the prompt
             if self.args.use_icl_examples:
-                icl_prompt = construct_icl_examples(self.trainset, self.initial_population, self.args.num_icl_examples)
 
-            model_input = f'''{icl_prompt}
-            Question: {question}
-            {prompt}
-            '''
+                if self.args.use_contrastive_cot:
+                    contrastive_prompt = construct_contrastive_icl_example(contrastive_samples, self.args.num_icl_examples)
+                    model_input = f'''{contrastive_prompt}
+                    Question: {question}
+                    {prompt}
+                    '''
+                else:
+                    icl_prompt = construct_icl_examples(self.trainset, self.initial_population, self.args.num_icl_examples)
+                    model_input = f'''{icl_prompt}
+                    Question: {question}
+                    {prompt}
+                    '''
+          
+            else:
+                model_input = f'''Question: {question}
+                {prompt}
+                '''
+
             system_message = "You are Orca, an AI language model created by Microsoft. You are a cautious assistant. You carefully follow instructions in order to solve math problems."
 
             prompt = f"<|im_start|>system\n{system_message}<|im_end|>\n<|im_start|>user\n{model_input}<|im_end|>\n<|im_start|>assistant"
@@ -228,6 +241,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_icl_examples", default=3, type=int, help="Number of ICL examples to use")
     parser.add_argument("--initial_temperature", default=100, type=float, help="Initial temperature for simulated annealing")
     parser.add_argument("--use_icl_examples", default=True, type=bool, help="Whether to use ICL examples")
+    parser.add_argument('--use_contrastive_cot', default=True, type=bool, help='whether to use contrastive cot in-context learning examples or not')
     parser.add_argument("--cooling_rate", default=0.95, type=float, help="Cooling rate for simulated annealing")
     parser.add_argument("--iterations_per_temperature", default=50, type=int, help="Number of iterations per temperature for simulated annealing")
     parser.add_argument("--num_of_samples", default=100, type=int, help="Number of samples to evaluate the fitness on")
