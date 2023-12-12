@@ -1,5 +1,6 @@
 import random
 import re
+from prompts.math_prompts import *
 
 def add_label(entry):
 
@@ -11,6 +12,7 @@ def add_label(entry):
     entry['label'] = answer_value
     
     return entry
+
 
 def construct_icl_examples(samples, sample_prompts, number_of_examples):
 
@@ -24,8 +26,8 @@ def construct_icl_examples(samples, sample_prompts, number_of_examples):
 {icl_thinking_styles[i]}
 {icl_examples[i]['ans']}
 '''
-
     return icl_prompt
+
 
 
 def evaluate_GSM8K(y_pred, label):
@@ -43,4 +45,24 @@ def evaluate_GSM8K(y_pred, label):
         return 1
     else:
         return 0
+
+
+
+def construct_contrastive_icl_example(samples, number_of_examples):
+
+    wrong_samples = random.sample(samples, number_of_examples)
+
+    contrastive_prompt = f''''''
+
+    for i in range(len(wrong_samples)):
+
+        contrastive_prompt += f'''
+Question: {wrong_samples[i]['question']}
+Explanation: {wrong_samples[i]['explanation']}
+Answer: {wrong_samples[i]['answer']}
+Wrong explanation: {wrong_samples[i]['wrong_explanation']}
+Wrong answer: {wrong_samples[i]['wrong_answer']}
+        '''
+    
+    return contrastive_prompt
 
