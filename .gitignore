@@ -1,1 +1,5 @@
 els_data/
+*.out
+*.txt
+/jobs
+__pycache__/
