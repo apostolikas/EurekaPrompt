@@ -1,69 +1,139 @@
-from abc import ABC, abstractmethod
 import json
+import torch
+import random 
 
-class AbstractDataFetcher(ABC):
-    @abstractmethod
-    def fetch_nli(self, file_name: str) -> list:
-        pass
+class EmbaseNLI(torch.utils.data.Dataset):
+    def __init__(self) -> None:
 
-    @abstractmethod
-    def fetch_ner(self, file_name: str) -> list:
-        pass
+        self.data = self.read_and_filter('./els_data/NaturalLanguageInference/Embase_NLI/Inference_Embase_samples.json')
+        self.data = [{'instruction': entry['instruction'], 'premise': entry['input']['premise'].encode('utf-8').decode('unicode-escape'), 'hypothesis': entry['input']['hypothesis'], 'output': entry['output']} for entry in self.data]
+        for entry in self.data:
+            if entry['output'] == 'TRUE':
+                entry['output'] = 'entailment'
+            elif entry['output'] == 'FALSE':
+                entry['output'] = 'contradiction'
+            else:
+                entry['output'] = 'neutral'
 
-    @abstractmethod
-    def fetch_re(self, file_name: str) -> list:
-        pass
+    def __len__(self):
+        return len(self.data)
 
-    @abstractmethod
-    def fetch_open_qa(self, file_name: str) -> list:
-        pass
+    def __getitem__(self, index):
+        return self.data[index]
 
-    def handle_unicode_escape(obj):
-        if isinstance(obj, str):
-            return obj.encode().decode('unicode-escape')
-        return obj
+    def has_special_characters(self, text):
+        return any(ord(char) > 127 for char in text)
 
-    def read_json_file(self, file_name: str) -> list:
+    def read_and_filter(self, file_name: str) -> list:
         with open(file_name, 'r', encoding='utf-8') as json_file:
             data = json.load(json_file)
-        return data
+        filtered_list = [item for item in data if not (
+            self.has_special_characters(item['input']['premise']) or
+            self.has_special_characters(item['input']['hypothesis'])
+        )]
+        return filtered_list
+
+class EmbaseNER(torch.utils.data.Dataset):
+    def __init__(self) -> None:
+        self.data = self.read_and_filter('./els_data/NER/Embase_NER/Embase_NER_samples.json')
+        self.data = [{'instruction': entry['instruction'], 'input': entry['input'], 'output': entry['output']} for entry in self.data]
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, index):
+        return self.data[index]
+
+    def has_special_characters(self, text):
+        return any(ord(char) > 127 for char in text)
+
+    def read_and_filter(self, file_name: str) -> list:
+        with open(file_name, 'r', encoding='utf-8') as json_file:
+            data = json.load(json_file)
+        filtered_list = [item for item in data if not self.has_special_characters(item['input'])]
+        return filtered_list
+    
+class EmbaseOpenQA(torch.utils.data.Dataset):
+    def __init__(self) -> None:
+        self.data = self.read_and_filter('./els_data/OpenBookQA/Embase_OpenBookQA/Embase_OpenBookQA_test.json')
+        self.data = [{'instruction': entry['instruction'], 'context': entry['input']['context'], 'question': entry['input']['question'], 'output': entry['output']} for entry in self.data]
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, index):
+        return self.data[index]
+
+    def has_special_characters(self, text):
+        return any(ord(char) > 127 for char in text)
+
+    def read_and_filter(self, file_name: str) -> list:
+        with open(file_name, 'r', encoding='utf-8') as json_file:
+            data = json.load(json_file)
+
+        filtered_list = [item for item in data if not (
+            self.has_special_characters(item['input']['context']) or
+            self.has_special_characters(item['input']['question'])
+        )]
+
+        return filtered_list
+
+class EmbaseRE(torch.utils.data.Dataset):
+    def __init__(self) -> None:
+        self.data = self.read_and_filter('./els_data/RE/Embase_RE/RE_Embase_samples.json')
+        self.data = [{'instruction': entry['instruction'], 'input': entry['input'], 'output': entry['output']} for entry in self.data]
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, index):
+        return self.data[index]
+
+    def has_special_characters(self, text):
+        return any(ord(char) > 127 for char in text)
+
+    def read_and_filter(self, file_name: str) -> list:
+        with open(file_name, 'r', encoding='utf-8') as json_file:
+            data = json.load(json_file)
+        filtered_list = [item for item in data if not self.has_special_characters(item['input'])]
+        return filtered_list
 
 
-class EmbaseDataFetcher(AbstractDataFetcher):
-    def fetch_nli(self, file_name: str) -> list:
-        data = self.read_json_file(file_name)
-        data = [{'instruction': entry['instruction'], 'premise': entry['input']['premise'].encode('utf-8').decode('unicode-escape'), 'hypothesis': entry['input']['hypothesis'], 'output': entry['output']} for entry in data if entry['task'] == 'natural language inference' and entry['DataAsset'] == 'Embase']
-        return data
+def construct_nli_icl_examples(dataset, num_of_examples, seed):
+    random.seed(seed)
+    samples = random.sample(dataset.data, num_of_examples)
+    icl_prompt = f""
+    for sample in samples:
+        icl_prompt += f"Premise: {sample['premise']}\nHypothesis: {sample['hypothesis']}\nThe label is {sample['output']}\n\n"
 
-    def fetch_ner(self, file_name: str) -> list:
-        data = self.read_json_file(file_name)
-        data = [{'instruction': entry['instruction'], 'input': entry['input'], 'output': entry['output']} for entry in data if entry['task'] == 'Named Entity Recognition' and entry['DataAsset'] == 'Embase']
-        return data
-
-    def fetch_re(self, file_name: str) -> list:
-        data = self.read_json_file(file_name)
-        data = [{'instruction': entry['instruction'], 'input': entry['input'], 'output': entry['output']} for entry in data if entry['task'] == 'Relation Extraction' and entry['DataAsset'] == 'Embase']
-        return data
-
-    def fetch_open_qa(self, file_name: str) -> list:
-        data = self.read_json_file(file_name)
-        data = [{'instruction': entry['instruction'], 'context': entry['input']['context'], 'question': entry['input']['question'], 'output': entry['output']} for entry in data if entry['task'] == 'Open Book QA' and entry['DataAsset'] == 'Embase']
-        return data
+    return icl_prompt
 
 
+def construct_ner_icl_examples(dataset, num_of_examples, seed):
+    random.seed(seed)
+    samples = random.sample(dataset.data, num_of_examples)
+    icl_prompt = f""
+    for sample in samples:
+        icl_prompt += f"Question: {sample['instruction']}\n{sample['input']}\nAnswer: {sample['output']}\n\n"
+    return icl_prompt
 
 
-embase_fetcher = EmbaseDataFetcher()
-nli_data = embase_fetcher.fetch_nli('./els_data/NaturalLanguageInference/Embase_NLI/Inference_Embase_samples.json')
-input_prompt = f'''Question: {nli_data[3]['instruction']}
+def construct_openqa_icl_examples(dataset, num_of_examples, seed):
+    random.seed(seed)
+    samples = random.sample(dataset.data, num_of_examples)
+    icl_prompt = f""
+    for sample in samples:
+        icl_prompt += f"Question: {sample['question']}\n{sample['context']}\nAnswer: {sample['output']}\n\n"
+    return icl_prompt
 
-Premise: {nli_data[3]['premise']}
 
+def construct_re_icl_examples(dataset, num_of_examples, seed):
+    random.seed(seed)
+    samples = random.sample(dataset.data, num_of_examples)
+    icl_prompt = f""
+    for sample in samples:
+        icl_prompt += f"Question: {sample['instruction']}\n{sample['input']}\nAnswer: {sample['output']}\n\n"
+    return icl_prompt
 
-Hypotehsis: {nli_data[3]['hypothesis']}
-
-Provide your answer as one of the following only: TRUE, FALSE, or UNDETERMINED.
-'''
-print(input_prompt)
-
-print(nli_data[3]['output'])
+x = EmbaseNER()
+print(construct_ner_icl_examples(x, 2, 1))
