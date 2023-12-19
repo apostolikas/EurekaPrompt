@@ -137,6 +137,23 @@ passive_voice_prompts = [
 "A structured thought process can be embraced as the problem is navigated, and an arabic numeral answer provided.",
 ]
 
+standard_prompts = [
+"Let's think step by step.",
+"Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step.",
+"Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and common sense), solve the problem step by step, and show the answer.",
+"Let's work this out in a step by step way to be sure we have the right answer.",
+"Take a deep breath and work on this problem step-by-step.",
+]
+
+mutation_styles = [
+    "The mutation is a variant of the input prompt using unconventional thinking.",
+    "The mutation is a variant of the input prompt that introduces an element of surprise.",
+    "The mutation is a variant of the input prompt that provides an alternative viewpoint.",
+    "The mutation is a variant of the input prompt that makes it easier to understand.",
+    "The mutation is a variant of the input prompt that helps an AI assistant follow the instructions.",
+    "The mutation is a variant of the input prompt that adds more details.",
+    "The mutation is a variant of the input prompt that motivates the AI assistant to approach the task with enthusiasm and a can-do attitude.",]
+
 
 contrastive_samples = [
     {
