@@ -10,7 +10,7 @@ from prompts.nli_prompts import *
 from prompts.open_qa_prompts import *
 import numpy as np
 import faiss
-
+from conversation import SocraticGPT
 
 def setup_logger(name, log_file, level=logging.INFO):
     '''
@@ -35,8 +35,10 @@ class GenPrompt:
         self.model = model
         self.tokenizer = tokenizer
         self.initial_population = self.initialise_population(self.args)
-        self.helper_model = AutoModelForCausalLM.from_pretrained("TheBloke/OpenHermes-2.5-Mistral-7B-GGUF", model_file="./openhermes-2.5-mistral-7b.Q4_K_M.gguf", model_type="mistral")
+        self.helper_tokenizer = AutoTokenizer.from_pretrained("berkeley-nest/Starling-LM-7B-alpha")
+        self.helper_model = AutoModelForCausalLM.from_pretrained("berkeley-nest/Starling-LM-7B-alpha", device_map='auto')
 
+        
     def initialise_population(self, args):
         '''
         This function initialises the population of prompts.
@@ -96,7 +98,7 @@ class GenPrompt:
         fitness = 0
         num_of_samples = 100 
 
-        samples = self.dataset.shuffle(seed=42).select(range(num_of_samples))
+        samples = self.dataset.shuffle(seed=self.args.seed).select(range(num_of_samples))
 
         for i,sample in enumerate(tqdm(samples)):
 
@@ -176,7 +178,13 @@ class GenPrompt:
         Write your new text that is the child of the crossover of the old ones and has a score as high as possible. Keep it short and concise and write only the new text in square brackets.
         '''
 
-        child_prompt = self.helper_model(crossover_prompt)
+        input_ids = self.helper_tokenizer(crossover_prompt, return_tensors="pt").input_ids.to('cuda')
+        outputs = self.helper_model.generate(
+            input_ids,
+            pad_token_id=self.helper_tokenizer.pad_token_id,
+            eos_token_id=self.helper_tokenizer.eos_token_id,
+        )
+        child_prompt = self.helper_tokenizer.decode(outputs[0], skip_special_tokens=True)
 
         return child_prompt
 
@@ -245,10 +253,43 @@ class GenPrompt:
             '''   
             
 
-        mutated_prompt = self.helper_model(mutation_prompt)
+        input_ids = self.helper_tokenizer(mutation_prompt, return_tensors="pt").input_ids.to('cuda')
+        outputs = self.helper_model.generate(
+            input_ids,
+            pad_token_id=self.helper_tokenizer.pad_token_id,
+            eos_token_id=self.helper_tokenizer.eos_token_id,
+        )
+        mutated_prompt = self.helper_tokenizer.decode(outputs[0], skip_special_tokens=True)
 
         return mutated_prompt
     
+
+    def mutate_with_dialogue(self, prompt, mutation_style):
+
+        socrates = SocraticGPT(role="Socrates", mutation_style=mutation_style)
+        theaetetus = SocraticGPT(role="Theaetetus", mutation_style=mutation_style)
+
+        initial_prompt = prompt
+
+        socrates.set_problem(initial_prompt)
+        theaetetus.set_problem(initial_prompt)
+
+        for _ in range(socrates.n_round):
+
+            socrates_response = socrates.get_response()
+            print(f"{socrates.role}: {socrates_response}")
+
+            if "final" in socrates_response.lower():
+                break
+
+            theaetetus_response = theaetetus.get_response()
+            print(f"{theaetetus.role}: {theaetetus_response}")
+
+        final_prompt = socrates_response  
+        mutated_prompt = re.findall(r'"([^"]*)"', final_prompt)
+        print(f"Mutated Prompt: {mutated_prompt}")
+        return mutated_prompt
+
 
     def build_prompt_index(self, prompts, tokenizer):
         '''
@@ -267,26 +308,25 @@ class GenPrompt:
 
 if __name__ == "__main__":
     
-    logger = setup_logger('progress_logger', 'output.log')
+    logger = setup_logger('progress_logger', 'EA_output.log')
 
     parser = argparse.ArgumentParser(description='Settings for the Evolutionary Algorithms')
     parser.add_argument('--task', default='gsm8k', type=str, help='Task to be solved. Choose one of: [gsm8k, nli, open_qa]')
     parser.add_argument('--type_of_prompts', default='short', type=str, help='Type of prompts for the initial population')
     parser.add_argument('--use_contrastive_cot', default=True, type=bool, help='whether to use contrastive cot in-context learning examples or not')
     parser.add_argument('--use_icl', default=True, type=bool, help='whether to use in-context learning examples or not')
-    parser.add_argument('--num_icl_examples', default=3, type=int, help='number of in-context learning examples used for evaluation')
+    parser.add_argument('--num_icl_examples', default=1, type=int, help='number of in-context learning examples used for evaluation')
     parser.add_argument('--num_of_samples', default=100, type=int, help='number of samples used for evaluation')
     parser.add_argument('--iterations', default=1000, type=int, help='number of iterations for the EA')
     parser.add_argument('--number_of_parents', default=2, type=int, help='number of parents to select')
     parser.add_argument('--number_of_mutations', default=2, type=int, help='number of mutations to perform')
     parser.add_argument('--mutate_population', action='store_true', help='mutate the population')
+    parser.add_argument('--seed', default=0, type=int, help='type of mutation')
     args = parser.parse_args()
     
-
     model = AutoModelForCausalLM.from_pretrained("microsoft/Orca-2-7b", device_map = 'auto', load_in_8bit = True)
     tokenizer = AutoTokenizer.from_pretrained("microsoft/Orca-2-7b", use_fast = False)
 
-    #TODO add the other datasets
     original_test_dataset = load_dataset("gsm8k", 'main', split='test')
     original_train_dataset = load_dataset("gsm8k", 'main', split='train')
 
