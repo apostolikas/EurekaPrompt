@@ -9,18 +9,36 @@ from prompts.open_qa_prompts import *
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from tqdm import tqdm
+from conversation import SocraticGPT
+import torch
+
+def setup_logger(name, log_file, level=logging.INFO):
+    '''
+    This function sets up the logger.
+    '''
+
+    formatter = logging.Formatter("%(asctime)s | %(message)s", "%Y-%m-%d %H:%M:%S")
+    handler = logging.FileHandler(log_file)        
+    handler.setFormatter(formatter)
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.addHandler(handler)
+    
+    return logger
 
 
 class SimAnneal:
-    def __init__(self, args, trainset, testset, model, tokenizer):
+    def __init__(self, args, trainset, testset):
         self.args = args
         self.trainset = trainset
         self.testset = testset
-        self.model = model
-        self.tokenizer = tokenizer        
-        self.logger = logging.basicConfig(filename='Simulated_Annealing.log', level = logging.INFO)
+        self.model = AutoModelForCausalLM.from_pretrained("microsoft/Orca-2-7b", device_map = 'auto', torch_dtype = torch.float16)
+        self.tokenizer = AutoTokenizer.from_pretrained("microsoft/Orca-2-7b", use_fast = False)
         self.prompt_pool = self.construct_prompt_pool()
-        self.helper_model = AutoModelForCausalLM.from_pretrained("TheBloke/OpenHermes-2.5-Mistral-7B-GGUF", model_file="./openhermes-2.5-mistral-7b.Q4_K_M.gguf", model_type="mistral")
+        self.helper_tokenizer = AutoTokenizer.from_pretrained("berkeley-nest/Starling-LM-7B-alpha")
+        self.helper_model = AutoModelForCausalLM.from_pretrained("berkeley-nest/Starling-LM-7B-alpha", device_map='auto')
+        self.logger = setup_logger('progress_logger', 'SA_output.log')
+
 
     def construct_prompt_pool(self):
         '''
@@ -36,6 +54,8 @@ class SimAnneal:
             initial_prompts = abstract_prompts
         elif self.args.type_of_prompts == 'passive':
             initial_prompts = passive_voice_prompts
+        elif self.args.type_of_prompts == 'standard':
+            initial_prompts = standard_prompts
         else:
             raise Exception('This type of prompts is not supported')
         
@@ -49,6 +69,7 @@ class SimAnneal:
         '''
         
         score = 0
+
         samples = self.testset.shuffle(seed=42).select(range(num_of_samples)) 
 
         for sample in tqdm(samples):
@@ -66,7 +87,7 @@ class SimAnneal:
                     {prompt}
                     '''
                 else:
-                    icl_prompt = construct_icl_examples(self.trainset, self.initial_population, self.args.num_icl_examples)
+                    icl_prompt = construct_icl_examples(self.trainset, [prompt], self.args.num_icl_examples)
                     model_input = f'''{icl_prompt}
                     Question: {question}
                     {prompt}
@@ -96,43 +117,46 @@ class SimAnneal:
         '''
         Function to generate a neighboring solution by perturbing the prompt using an LLM.
         '''
-        # Have to change it to remember 2 previous prompts and then use OPRO to generate a new prompt #  
-        samples = self.trainset.shuffle(seed=42).select(range(2))
+        samples = self.trainset.shuffle(seed=42).select(range(1))
         questions = samples['question']
         labels = samples['label']
 
-        sample_prompts = random.sample(list(scores), 2)
-        sample_scores = [scores[sample_prompts[0]], scores[sample_prompts[1]]]
+        sorted_scores = {k: v for k, v in sorted(scores.items(), key=lambda item: item[1], reverse=True)}
+        sample_prompts = list(sorted_scores.keys())[:1]
 
         perturb_prompt = f'''I have some texts along with their corresponding scores. The texts are arranged in ascending order based on their scores, where higher scores indicate better quality.
         text:
         {sample_prompts[0]}
         score: 
-        {sample_scores[0]}
+        {scores[sample_prompts[0]]}
         
         text:
-        {sample_prompts[1]}
+        {prompt}
         score:
-        {sample_scores[1]}
+        {scores[prompt]}
 
         The following exemplars show how to apply your text: you replace <INS> in each input with your text, then read the input and give an output. We say your output is wrong if your output is different from the given output, and we say your output is correct if they are the same.
 
         input: 
         Q: {questions[0]}
         A: <INS>
-        output: 
-        {labels[0]}
+        output: {labels[0]}
 
         input:
         Q: {questions[1]}
         A: <INS>
-        output:
-        {labels[1]}
+        output: {labels[1]}
 
         Write your new text that is different from the old ones and has a score as high as possible. Write the text in square brackets.
         '''
 
-        new_prompt = self.helper_model(perturb_prompt)
+        input_ids = self.helper_tokenizer(perturb_prompt, return_tensors="pt").input_ids.to('cuda')
+        outputs = self.helper_model.generate(
+            input_ids,
+            pad_token_id=self.helper_tokenizer.pad_token_id,
+            eos_token_id=self.helper_tokenizer.eos_token_id,
+        )
+        new_prompt = self.helper_tokenizer.decode(outputs[0], skip_special_tokens=True)
 
         return new_prompt
     
@@ -141,54 +165,52 @@ class SimAnneal:
 
         perturb_prompt = f'''{random.choice(mutation_prompts)}
         {prompt}
+        Your mutated prompt has to be within brackets.
         '''
 
-        new_prompt = self.helper_model(perturb_prompt)
+        input_ids = self.helper_tokenizer(perturb_prompt, return_tensors="pt").input_ids.to('cuda')
+        outputs = self.model.generate(
+            input_ids,
+            pad_token_id=self.helper_tokenizer.pad_token_id,
+            eos_token_id=self.helper_tokenizer.eos_token_id,
+        )
+        new_prompt = self.helper_tokenizer.decode(outputs[0], skip_special_tokens=True)
 
         return new_prompt
 
 
+    def mutate_with_dialogue(self, prompt, mutation_style):
 
-    # def run_normal_simulated_annealing(self, initial_prompt):
-    #     '''
-    #     This function runs the simulated annealing algorithm to optimize the prompt.
-    #     '''
+        socrates = SocraticGPT(role="Socrates", mutation_style=mutation_style)
+        theaetetus = SocraticGPT(role="Theaetetus", mutation_style=mutation_style)
 
-    #     current_prompt = initial_prompt
-    #     best_prompt = initial_prompt
-    #     temperature = self.args.initial_temperature
+        initial_prompt = prompt
 
-    #     while temperature > 1.0:
+        socrates.set_problem(initial_prompt)
+        theaetetus.set_problem(initial_prompt)
 
-    #         for _ in range(self.args.iterations_per_temperature):
+        for _ in range(socrates.n_round):
 
-    #             neighbor_prompt = self.generate_neighboring_solution_with_LLM(current_prompt)
+            socrates_response = socrates.get_response()
+            print(f"{socrates.role}: {socrates_response}")
 
-    #             current_score = self.evaluate(current_prompt, self.args.num_of_samples)
-    #             neighbor_score = self.evaluate(neighbor_prompt, self.args.num_of_samples)
+            if "final" in socrates_response.lower():
+                break
 
-    #             # Metropolis criterion
-    #             if neighbor_score > current_score or random.uniform(0, 1) < math.exp((neighbor_score - current_score) / temperature):
-    #                 current_prompt = neighbor_prompt
+            theaetetus_response = theaetetus.get_response()
+            print(f"{theaetetus.role}: {theaetetus_response}")
 
-    #                 # Update the best prompt if needed
-    #                 if neighbor_score > self.evaluate(best_prompt, self.args.num_of_samples):
-    #                     best_prompt = neighbor_prompt
-    #                     best_score = neighbor_score
+        final_prompt = socrates_response  
+        mutated_prompt = re.findall(r'"([^"]*)"', final_prompt)
+        final_prompt = mutated_prompt[1:]
+        final_prompt = [prompt.replace('"',"'").replace("[","").replace("]","").replace("!",".") for prompt in final_prompt]
 
-                
-    #         self.logger.info("After {} iterations at temperature {}, the best prompt is {} with score {}".format(self.args.iterations_per_temperature, temperature, best_prompt, best_score))
+        final_prompt = random.sample(final_prompt, 1)
 
-    #         temperature *= self.args.cooling_rate
+        return final_prompt[0]
 
-    #         self.logger.info("Temperature is now {}".format(temperature))
 
-    #     self.logger.info("The best prompt is {} with score {}".format(best_prompt, best_score))
-
-    #     return best_prompt, best_score
-    
-
-    def run_boosted_simulated_annealing(self, initial_prompt):
+    def run_simulated_annealing(self, initial_prompt):
         '''
         This function runs the simulated annealing algorithm to optimize the prompt.
         '''
@@ -201,7 +223,7 @@ class SimAnneal:
         for initial_prompts in self.prompt_pool:
             sa_scores[initial_prompts] = self.evaluate(initial_prompts, self.args.num_of_samples)
 
-        with open('Initial_prompts_scores.txt', 'w') as f:
+        with open('SA_initial_prompts_scores.txt', 'w') as f:
             for prompt, score in sa_scores.items():
                 f.write("%s:%s\n" % (prompt, score))
         
@@ -209,7 +231,19 @@ class SimAnneal:
 
             for _ in range(self.args.iterations_per_temperature):
 
-                neighbor_prompt = self.generate_neighboring_solution_with_OPRO(current_prompt, sa_scores)
+                if self.args.mutation_type == 'opro':
+
+                    neighbor_prompt = self.generate_neighboring_solution_with_OPRO(current_prompt, sa_scores)
+
+                elif self.args.mutation_type == 'llm':
+
+                    neighbor_prompt = self.generate_neighboring_solution_with_LLM(current_prompt)
+
+                elif self.args.mutation_type == 'dialogue':
+            
+                    mutation_style = random.choice(mutation_styles)
+                    neighbor_prompt = self.mutate_with_dialogue(current_prompt, mutation_style)
+
 
                 current_score = self.evaluate(current_prompt, self.args.num_of_samples)
                 neighbor_score = self.evaluate(neighbor_prompt, self.args.num_of_samples)
@@ -237,14 +271,15 @@ class SimAnneal:
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--type_of_prompts", default="short", type=str, help="Type of prompts to use")
-    parser.add_argument("--num_icl_examples", default=3, type=int, help="Number of ICL examples to use")
+    parser.add_argument("--type_of_prompts", default="standard", type=str, help="Type of prompts to use")
+    parser.add_argument("--num_icl_examples", default=1, type=int, help="Number of ICL examples to use")
     parser.add_argument("--initial_temperature", default=100, type=float, help="Initial temperature for simulated annealing")
     parser.add_argument("--use_icl_examples", default=True, type=bool, help="Whether to use ICL examples")
-    parser.add_argument('--use_contrastive_cot', default=True, type=bool, help='whether to use contrastive cot in-context learning examples or not')
+    parser.add_argument('--use_contrastive_cot', default=False, type=bool, help='whether to use contrastive cot in-context learning examples or not')
     parser.add_argument("--cooling_rate", default=0.95, type=float, help="Cooling rate for simulated annealing")
-    parser.add_argument("--iterations_per_temperature", default=50, type=int, help="Number of iterations per temperature for simulated annealing")
+    parser.add_argument("--iterations_per_temperature", default=10, type=int, help="Number of iterations per temperature for simulated annealing")
     parser.add_argument("--num_of_samples", default=100, type=int, help="Number of samples to evaluate the fitness on")
+    parser.add_argument("--mutation_type", default="dialogue", type=str, help="Type of mutation to use")
     args = parser.parse_args()
 
 
@@ -255,20 +290,16 @@ if __name__ == "__main__":
     testset = original_test_dataset.map(add_label)
     trainset = original_train_dataset.map(add_label)
 
-    # Load the model and tokenizer
-    tokenizer = AutoTokenizer.from_pretrained("microsoft/Orca-2-13b", device_map = "auto")
-    model = AutoModelForCausalLM.from_pretrained("microsoft/Orca-2-13b", use_fast = True)
-
-    prompt_engine = SimAnneal(args, trainset, testset, model, tokenizer)
+    prompt_engine = SimAnneal(args, trainset, testset)
 
     scores = {}
     initial_prompt = random.choice(prompt_engine.prompt_pool)
-    best_prompt, best_score = prompt_engine.run_normal_simulated_annealing(initial_prompt)
+    best_prompt, best_score = prompt_engine.run_simulated_annealing(initial_prompt)
     scores[best_prompt] = best_score
 
-    # Evaluate the prompts on the full dataset
-    for prompt in scores.keys():
-        score = prompt_engine.evaluate(prompt, len(testset))
-        scores[prompt] = score
+    # # Evaluate the prompts on the full dataset
+    # for prompt in scores.keys():
+    #     score = prompt_engine.evaluate(prompt, len(testset))
+    #     scores[prompt] = score
 
     print(f"The optimal prompt is {max(scores, key = scores.get)} with a score of {scores[max(scores, key = scores.get)]}")
