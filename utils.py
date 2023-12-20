@@ -1,6 +1,7 @@
 import random
 import re
 from prompts.math_prompts import *
+from nltk import PorterStemmer
 
 def add_label(entry):
 
@@ -66,3 +67,11 @@ Wrong answer: {wrong_samples[i]['wrong_answer']}
     
     return contrastive_prompt
 
+
+
+def evaluate_nli(y_pred:str, label:str) -> int:
+    stemmer = PorterStemmer()
+    stemmed_y_pred = stemmer.stem(y_pred)
+    stemmed_label = stemmer.stem(label)
+
+    return 1 if stemmed_label in stemmed_y_pred else 0
