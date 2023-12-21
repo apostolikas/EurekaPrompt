@@ -35,8 +35,8 @@ class EmbaseNLI(torch.utils.data.Dataset):
 
 class EmbaseNER(torch.utils.data.Dataset):
     def __init__(self) -> None:
-        self.data = self.read_and_filter('./els_data/NER/Embase_NER/Embase_NER_samples.json')
-        self.data = [{'instruction': entry['instruction'], 'input': entry['input'], 'output': entry['output']} for entry in self.data]
+        self.data = self.read_and_filter('./Embase_NER_samples.json')
+        self.data = [{'instruction': entry['instruction'], 'input': entry['input'], 'output': entry['output'], 'entity_type': entry['entity_type'], 'structured_output': entry['structured_output']} for entry in self.data]
 
     def __len__(self):
         return len(self.data)
@@ -136,4 +136,4 @@ def construct_re_icl_examples(dataset, num_of_examples, seed):
     return icl_prompt
 
 x = EmbaseNER()
-print(construct_ner_icl_examples(x, 2, 1))
+print(x[0])
