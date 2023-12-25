@@ -51,7 +51,7 @@ def inference(args, model, tokenizer, oqa_prompt):
 
     # system_message = "You are Orca, an AI language model created by Microsoft. You are a cautious assistant and a great math teacher that follows instructions carefully."
 
-    filename = f"./Starling_OQA_{args.mode}_{args.ins}_seed_{args.seed}.txt"
+    filename = f"./Starling_Embase_OQA_{args.mode}_{args.ins}_seed_{args.seed}.txt"
 
     with open(filename, 'w') as f:
 
