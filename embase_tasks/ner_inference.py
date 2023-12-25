@@ -44,7 +44,6 @@ def construct_icl_examples(samples, number_of_examples, seed):
         label = icl_sample['structured_output']
         entity_type = icl_sample['entity_type']
         output = icl_sample['output']
-        icl_prompt += f"Q: Choose entailment, contradiction or neutral for the relationship between the premise and the hypothesis.\n\nPremise: {premise}\n\nHypothesis: {hypothesis}\n\n{instruct}\n\nA: {label}\n\n"
         icl_prompt += f"Q: What {entity_type}s can be found in the text?\n\nText: {text}\n\nA: {output}"
 
     return icl_prompt
@@ -60,7 +59,6 @@ def construct_ins_examples(samples, number_of_examples, seed, instruct):
         label = icl_sample['structured_output']
         entity_type = icl_sample['entity_type']
         output = icl_sample['output']
-        icl_prompt += f"Q: Choose entailment, contradiction or neutral for the relationship between the premise and the hypothesis.\n\nPremise: {premise}\n\nHypothesis: {hypothesis}\n\n{instruct}\n\nA: {label}\n\n"
         icl_prompt += f"Q: What {entity_type}s can be found in the text?\n\nText: {text}\n\n{instruct}\n\nA: {output}"
 
     return icl_prompt
