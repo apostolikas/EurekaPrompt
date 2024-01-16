@@ -9,7 +9,7 @@ from prompts.math_prompts import *
 from prompts.nli_prompts import *
 from prompts.open_qa_prompts import *
 import numpy as np
-import faiss
+import torch
 from conversation import SocraticGPT
 
 def setup_logger(name, log_file, level=logging.INFO):
@@ -28,15 +28,14 @@ def setup_logger(name, log_file, level=logging.INFO):
 
 
 class GenPrompt:
-    def __init__(self, args, trainset, testset, model, tokenizer):
+    def __init__(self, args, trainset, testset, model, tokenizer, dataset):
         self.args = args
         self.trainset = trainset
         self.testset = testset
+        self.dataset = dataset
         self.model = model
         self.tokenizer = tokenizer
         self.initial_population = self.initialise_population(self.args)
-        self.helper_tokenizer = AutoTokenizer.from_pretrained("berkeley-nest/Starling-LM-7B-alpha")
-        self.helper_model = AutoModelForCausalLM.from_pretrained("berkeley-nest/Starling-LM-7B-alpha", device_map='auto')
 
         
     def initialise_population(self, args):
@@ -45,30 +44,39 @@ class GenPrompt:
         The current version suports only prompts that will be created with external tools.
         '''
 
-        if args.task == 'gsm8k':
-            if args.type_of_prompts == 'short':
-                initial_prompts = shorter_prompts
-            elif args.type_of_prompts == 'normal':
-                initial_prompts = mixed_prompts
-            elif args.type_of_prompts == 'long':
-                initial_prompts = long_prompts
-            elif args.type_of_prompts == 'abstract':
-                initial_prompts = abstract_prompts
-            elif args.type_of_prompts == 'passive':
-                initial_prompts = passive_voice_prompts
-            else:
-                initial_prompts = []
-                for task in task_description:
-                    for style in thinking_styles:
-                        prompt = f"{task}\n{style}."
-                        initial_prompts.append(prompt)     
+        # if args.task == 'gsm8k':
+        #     if args.type_of_prompts == 'short':
+        #         initial_prompts = shorter_prompts
+        #     elif args.type_of_prompts == 'normal':
+        #         initial_prompts = mixed_prompts
+        #     elif args.type_of_prompts == 'long':
+        #         initial_prompts = long_prompts
+        #     elif args.type_of_prompts == 'abstract':
+        #         initial_prompts = abstract_prompts
+        #     elif args.type_of_prompts == 'passive':
+        #         initial_prompts = passive_voice_prompts
+        #     else:
+        #         initial_prompts = []
+        #         for task in task_description:
+        #             for style in thinking_styles:
+        #                 prompt = f"{task}\n{style}."
+        #                 initial_prompts.append(prompt)     
         
-        elif args.task == 'nli' or args.task == 'open_qa':
-            initial_prompts = []
-            for task in task_description:
-                for style in thinking_styles:
-                    prompt = f"{task}.\n{style}."
-                    initial_prompts.append(prompt)
+        # elif args.task == 'nli' or args.task == 'open_qa':
+        #     initial_prompts = []
+        #     for task in task_description:
+        #         for style in thinking_styles:
+        #             prompt = f"{task}.\n{style}."
+        #             initial_prompts.append(prompt)
+
+        initial_prompts = [
+            "Let's think step by step",
+            "Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step",
+            "Take a deep breath and work on this problem step-by-step",
+            "Let's submerge ourselves in the conundrum, identify vital variables and their numerical values, and establish a plan. As we carry out the plan, let's scrutinize intermediate findings (ensure correct numerical calculations and logical reasoning), tackle the problem progressively, and unveil the answer",
+            "Let's work this out in a step by step way to be sure we have the right answer",
+            "Let's be very precise and accurate in our calculations"
+        ]
 
         return initial_prompts
 
@@ -82,9 +90,8 @@ class GenPrompt:
         fitness_dict = {}
 
         for prompt in population:
-
             fitness_dict[prompt] = self.evaluate_fitness(prompt)
-
+            print(f"Evaluated prompt: {prompt} with fitness {fitness_dict[prompt]}")
         return fitness_dict
 
 
@@ -96,9 +103,8 @@ class GenPrompt:
 
         # Calculate the accuracy
         fitness = 0
-        num_of_samples = 100 
 
-        samples = self.dataset.shuffle(seed=self.args.seed).select(range(num_of_samples))
+        samples = self.dataset.shuffle(seed=self.args.seed).select(range(self.args.num_of_samples))
 
         for i,sample in enumerate(tqdm(samples)):
 
@@ -110,34 +116,27 @@ class GenPrompt:
 
                 if self.args.use_contrastive_cot:
                     contrastive_prompt = construct_contrastive_icl_example(contrastive_samples, self.args.num_icl_examples)
-                    model_input = f'''{contrastive_prompt}
-                    Question: {question}
-                    {prompt}
-                    '''
+                    model_input = f'''{contrastive_prompt}\n\nQuestion: {question}\n\n{prompt}'''
                 else:
                     icl_prompt = construct_icl_examples(self.trainset, self.initial_population, self.args.num_icl_examples)
-                    model_input = f'''{icl_prompt}
-                    Question: {question}
-                    {prompt}
-                    '''
+                    model_input = f'''{icl_prompt}\n\nQuestion: {question}\n\n{prompt}'''
           
             else:
-                model_input = f'''Question: {question}
-                {prompt}
-                '''
+                model_input = f'''Question: {question}\n\n{prompt}\n\nAnswer:'''
 
-            system_message = "You are Orca, an AI language model created by Microsoft. You are a cautious assistant. You carefully follow instructions in order to solve math problems."
-
-            prompt = f"<|im_start|>system\n{system_message}<|im_end|>\n<|im_start|>user\n{model_input}<|im_end|>\n<|im_start|>assistant"
-
-            input_ids = self.tokenizer(prompt, return_tensors='pt').input_ids.to("cuda")
-
-            output_ids = self.model.generate(input_ids)
-            text_output = self.tokenizer.batch_decode(output_ids)[0]
+            input_ids = self.tokenizer(model_input, return_tensors="pt").input_ids.to('cuda')
+            outputs = self.model.generate(
+                input_ids,
+                max_length=500,
+                pad_token_id=self.tokenizer.pad_token_id,
+                eos_token_id=self.tokenizer.eos_token_id,
+            )
+            response_ids = outputs[0]
+            text_output = self.tokenizer.decode(response_ids, skip_special_tokens=True)
 
             fitness += evaluate_GSM8K(text_output, label)
 
-        fitness = fitness/num_of_samples
+        fitness = fitness/self.args.num_of_samples
 
         return fitness
 
@@ -148,14 +147,18 @@ class GenPrompt:
         The current version supports only the roulette wheel selection method based on the fitness of the prompts.
         '''
 
-        parents_pool = []
-        fitness_weights = []
+        # parents_pool = []
+        # fitness_weights = []
 
-        for prompt in fitness_dict.keys():
-            parents_pool.append(prompt)
-            fitness_weights.append(fitness_dict[prompt])
+        # Pick two prompts from fitness dict based on their fitness 
 
-        parents = random.choice(parents_pool, weights = fitness_weights, k = self.args.number_of_parents)
+        parents = random.choices(list(fitness_dict.keys()), weights = list(fitness_dict.values()), k = 2)
+
+        # for prompt in fitness_dict.keys():
+        #     parents_pool.append(prompt)
+        #     fitness_weights.append(fitness_dict[prompt])
+
+        # parents = random.choice(parents_pool, weights = fitness_weights, k = 2) # k = self.args.number_of_parents)
 
         return parents
 
@@ -175,18 +178,25 @@ class GenPrompt:
         {parent_prompt1}
         text:
         {parent_prompt2}
-        Write your new text that is the child of the crossover of the old ones and has a score as high as possible. Keep it short and concise and write only the new text in square brackets.
+        Write your new text that is the child of the crossover of the old ones. Keep it short and concise and write only the new text in square brackets.
         '''
 
-        input_ids = self.helper_tokenizer(crossover_prompt, return_tensors="pt").input_ids.to('cuda')
-        outputs = self.helper_model.generate(
+        input_ids = self.tokenizer(crossover_prompt, return_tensors="pt").input_ids.to('cuda')
+        outputs = self.model.generate(
             input_ids,
-            pad_token_id=self.helper_tokenizer.pad_token_id,
-            eos_token_id=self.helper_tokenizer.eos_token_id,
+            max_length=200,
+            pad_token_id=self.tokenizer.pad_token_id,
+            eos_token_id=self.tokenizer.eos_token_id,
         )
-        child_prompt = self.helper_tokenizer.decode(outputs[0], skip_special_tokens=True)
-
-        return child_prompt
+        response_ids = outputs[0]
+        child_prompt = self.tokenizer.decode(response_ids, skip_special_tokens=True)
+        print(child_prompt)
+        # Find the text in the square brackets
+        pattern = r'\[([^\]]+)\]'
+        final_child_prompt = re.findall(pattern, child_prompt)
+        final_child_prompt = final_child_prompt[0]
+        print(f"Final child prompt: {final_child_prompt}")
+        return final_child_prompt
 
 
     def mutate(self, child, population):
@@ -195,16 +205,21 @@ class GenPrompt:
         The current version supports only the LLM mutation method.
         '''
 
+        mutation_style = random.choice(mutation_styles)
+
         new_prompts = []
 
         if random.random() > 0.5:
-            mutated_child = self.mutate_with_LLM(child) 
+            print("Mutating child")
+            # mutated_child = self.mutate_with_LLM(child) 
+            mutated_child = self.mutate_with_dialogue(child, mutation_style = mutation_style)
             new_prompts.append(mutated_child)
 
         if self.args.mutate_population:
-
-            random_prompts = random.choice(population, k = self.args.number_of_mutations)
-            mutated_prompts = [self.mutate_with_LLM(prompt) for prompt in random_prompts]
+            print("Mutating random prompts from the population")
+            random_prompts = random.sample(population, self.args.number_of_mutations)
+            # mutated_prompts = [self.mutate_with_LLM(prompt) for prompt in random_prompts]
+            mutated_prompts = [self.mutate_with_dialogue(prompt, mutation_style = mutation_style) for prompt in random_prompts]
             new_prompts.extend(mutated_prompts)
         
         return new_prompts
@@ -266,8 +281,8 @@ class GenPrompt:
 
     def mutate_with_dialogue(self, prompt, mutation_style):
 
-        socrates = SocraticGPT(role="Socrates", mutation_style=mutation_style)
-        theaetetus = SocraticGPT(role="Theaetetus", mutation_style=mutation_style)
+        socrates = SocraticGPT(role="Socrates", model = self.model, tokenizer = self.tokenizer, mutation_style=mutation_style)
+        theaetetus = SocraticGPT(role="Theaetetus",  model = self.model, tokenizer = self.tokenizer, mutation_style=mutation_style)
 
         initial_prompt = prompt
 
@@ -277,34 +292,22 @@ class GenPrompt:
         for _ in range(socrates.n_round):
 
             socrates_response = socrates.get_response()
-            print(f"{socrates.role}: {socrates_response}")
+            # print(f"{socrates.role}: {socrates_response}")
 
             if "final" in socrates_response.lower():
                 break
 
             theaetetus_response = theaetetus.get_response()
-            print(f"{theaetetus.role}: {theaetetus_response}")
+            # print(f"{theaetetus.role}: {theaetetus_response}")
 
+        print(f"Generated solution with : {mutation_style}")
         final_prompt = socrates_response  
         mutated_prompt = re.findall(r'"([^"]*)"', final_prompt)
-        print(f"Mutated Prompt: {mutated_prompt}")
+        final_prompt = mutated_prompt[1:]
+        final_prompt = [prompt.replace('"',"'").replace("[","").replace("]","").replace("!",".") for prompt in final_prompt]
+        print(f"Final Mutated prompt: {final_prompt}")
         return mutated_prompt
 
-
-    def build_prompt_index(self, prompts, tokenizer):
-        '''
-        This function builds a faiss index with the prompts of the initial population.
-        '''
-
-        prompt_embeddings = [tokenizer(prompt, return_tensors="pt")["input_ids"] for prompt in prompts]
-
-        prompt_embeddings = np.array(prompt_embeddings)
-
-        index = faiss.IndexFlatL2(prompt_embeddings[0].shape[1])
-        index.add(prompt_embeddings)
-
-        return index
-    
 
 if __name__ == "__main__":
     
@@ -313,19 +316,25 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Settings for the Evolutionary Algorithms')
     parser.add_argument('--task', default='gsm8k', type=str, help='Task to be solved. Choose one of: [gsm8k, nli, open_qa]')
     parser.add_argument('--type_of_prompts', default='short', type=str, help='Type of prompts for the initial population')
-    parser.add_argument('--use_contrastive_cot', default=True, type=bool, help='whether to use contrastive cot in-context learning examples or not')
-    parser.add_argument('--use_icl', default=True, type=bool, help='whether to use in-context learning examples or not')
+    parser.add_argument('--use_contrastive_cot', default=False, type=bool, help='whether to use contrastive cot in-context learning examples or not')
+    parser.add_argument('--use_icl_examples', default=False, type=bool, help='whether to use in-context learning examples or not')
     parser.add_argument('--num_icl_examples', default=1, type=int, help='number of in-context learning examples used for evaluation')
-    parser.add_argument('--num_of_samples', default=100, type=int, help='number of samples used for evaluation')
-    parser.add_argument('--iterations', default=1000, type=int, help='number of iterations for the EA')
-    parser.add_argument('--number_of_parents', default=2, type=int, help='number of parents to select')
+    parser.add_argument('--num_of_samples', default=30, type=int, help='number of samples used for evaluation')
+    parser.add_argument('--iterations', default=30, type=int, help='number of iterations for the EA')
+    # parser.add_argument('--number_of_parents', default=2, type=int, help='number of parents to select')
     parser.add_argument('--number_of_mutations', default=2, type=int, help='number of mutations to perform')
-    parser.add_argument('--mutate_population', action='store_true', help='mutate the population')
     parser.add_argument('--seed', default=0, type=int, help='type of mutation')
+    parser.add_argument('--mutate_population', default=True, type=bool, help='whether to mutate the population or not')
     args = parser.parse_args()
     
-    model = AutoModelForCausalLM.from_pretrained("microsoft/Orca-2-7b", device_map = 'auto', load_in_8bit = True)
-    tokenizer = AutoTokenizer.from_pretrained("microsoft/Orca-2-7b", use_fast = False)
+    # model = AutoModelForCausalLM.from_pretrained("microsoft/Orca-2-7b", device_map = 'auto', load_in_8bit = True)
+    # tokenizer = AutoTokenizer.from_pretrained("microsoft/Orca-2-7b", use_fast = False)
+
+    # Initializing model and dataset and engine
+
+    tokenizer = AutoTokenizer.from_pretrained("berkeley-nest/Starling-LM-7B-alpha")
+    model = AutoModelForCausalLM.from_pretrained("berkeley-nest/Starling-LM-7B-alpha", torch_dtype = torch.float16)
+    model = model.to('cuda')
 
     original_test_dataset = load_dataset("gsm8k", 'main', split='test')
     original_train_dataset = load_dataset("gsm8k", 'main', split='train')
@@ -333,7 +342,7 @@ if __name__ == "__main__":
     testset = original_test_dataset.map(add_label)
     trainset = original_train_dataset.map(add_label)
 
-    prompt_engine = GenPrompt(args, trainset, testset, model, tokenizer)
+    prompt_engine = GenPrompt(args, trainset, testset, model, tokenizer, testset)
 
     best_fitness = 0
     stagnation_count = 0
@@ -344,8 +353,17 @@ if __name__ == "__main__":
         if iter == 0:
             logger.info(f"Evaluation of the initial population")
             population = prompt_engine.initialise_population(args)
-            prompt_index = prompt_engine.build_prompt_index(population, tokenizer)
-            fitness_dict = prompt_engine.evaluate_population(population)
+            # fitness_dict = prompt_engine.evaluate_population(population)
+
+            fitness_dict = {
+                "Let's think step by step" : 0.2333,
+                "Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step" : 0.2,
+                "Take a deep breath and work on this problem step-by-step" : 0.2333,
+                "Let's submerge ourselves in the conundrum, identify vital variables and their numerical values, and establish a plan. As we carry out the plan, let's scrutinize intermediate findings (ensure correct numerical calculations and logical reasoning), tackle the problem progressively, and unveil the answer" : 0.4666,
+                "Let's work this out in a step by step way to be sure we have the right answer": 0.3333,
+                "Let's be very precise and accurate in our calculations": 0.3666,
+                "Take a step-by-step approach to this problem" : 0.4666,
+            }
 
             for prompt in population:
                 logger.info(f"Generation {iter}: {prompt} with fitness {fitness_dict[prompt]}")
@@ -353,18 +371,19 @@ if __name__ == "__main__":
 
         else:
             
-            parents = prompt_engine.select_parents(fitness_dict)
-            children = prompt_engine.crossover(parents, model, tokenizer)
-
-            distances, indices = prompt_index.search(tokenizer(children, return_tensors="pt")["input_ids"], 2) 
-            logger.info(f"Generation {iter}: {children} with fitness {fitness_dict[children]}")
-            fitness_dict.update(prompt_engine.evaluate_population(children))
+            # parents = prompt_engine.select_parents(fitness_dict)
+            parents = random.sample(list(fitness_dict.keys()), 2)
+            children = prompt_engine.crossover(parents)
+            fitness_dict.update(prompt_engine.evaluate_population([children]))
             population.extend(children)
-            new_prompts = prompt_engine.mutate(children)
+            logger.info(f"Generation {iter} Crossover: '{children}' with fitness {fitness_dict[children]}")
+            print("Crossover done")
+            print("Mutating the population")
+            new_prompts = prompt_engine.mutate(children, population)
             fitness_dict.update(prompt_engine.evaluate_population(new_prompts))
-
+            print(f"The mutated prompts are: {new_prompts}")
             for prompt in new_prompts:
-                logger.info(f"Generation {iter}: {prompt} with fitness {fitness_dict[prompt]}")
+                logger.info(f"Generation {iter} Mutation: '{prompt}' with fitness {fitness_dict[prompt]}")
 
             population.extend(new_prompts)
             best_prompt = max(fitness_dict, key = fitness_dict.get)
