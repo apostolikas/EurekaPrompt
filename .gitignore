@@ -3,3 +3,8 @@ els_data/
 *.txt
 /jobs
 __pycache__/
+*.log
+embase_tasks/
+reaxys_tasks/
+prompts/
+gpt_inference/
