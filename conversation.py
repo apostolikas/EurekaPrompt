@@ -20,7 +20,7 @@ class SocraticGPT:
         })
         self.history.append({
             "role": "assistant",
-            "content": f"Hi {self.other_role}, let's work together to mutate the prompt. {self.mutation_style} Both of us can suggest improvements or mutations. The mutated prompt has to be within brackets."
+            "content": f"Hi {self.other_role}, let's work together to mutate the prompt. {self.mutation_style} Both of us can suggest improvements or mutations. The mutated prompt has to be short and concise. The mutated prompt has to be within brackets."
         })
 
     def get_response(self):
