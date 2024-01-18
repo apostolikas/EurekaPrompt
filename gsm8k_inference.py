@@ -83,12 +83,14 @@ def inference(args, model, tokenizer, math_prompt):
 
     acc = 0
 
+    print(math_prompt)
+
     # system_message = "You are Orca, an AI language model created by Microsoft. You are a cautious assistant and a great math teacher that follows instructions carefully."
 
     system_message = "You are an AI language model. You are a cautious assistant and a great math teacher that follows instructions carefully."
 
 
-    filename = f"./mistral_experiment_{args.mode}_{args.ins}_seed_{args.seed}.txt"
+    filename = f"./starling_experiment_{args.mode}_{args.ins}_seed_{args.seed}.txt"
 
     with open(filename, 'w') as f:
 
@@ -178,7 +180,8 @@ def inference(args, model, tokenizer, math_prompt):
 
                 if args.mode == '0shot':
 
-                    model_input = f'''Question: {question}\n{math_prompt}'''
+                    # model_input = f'''Question: {question}\n{math_prompt}'''
+                    model_input = f'''Question: {question}\n\n{math_prompt}\n\nAnswer:'''
 
                 elif args.mode == '1shot':
 
@@ -203,52 +206,34 @@ def inference(args, model, tokenizer, math_prompt):
 
                 raise ValueError("Choose one of: [icl, cot, ps, instruct]")
 
+            start = time.time()
+
             ### ORCA-2 ###
 
             # prompt = f"<|im_start|>system\n{system_message}<|im_end|>\n<|im_start|>user\n{model_input}<|im_end|>\n<|im_start|>assistant"
-
-            ### Mistral Instruct ###
-
-
-            role = "From now on, you are an excellent math teacher and always teach your students math problems correctly. And I am one of your students."
-
-            role_feedback = "As your math teacher, I'll do my best to explain mathematical concepts correctly so that you can understand them easily. Let's solve the math problems together."
-
-            prompt = [
-            {"role": "user", "content": role},
-            {"role": "assistant", "content": role_feedback},
-            {"role": "user", "content": model_input}
-            ]
-
-            # prompt = [
-            # {"role": "user", "content": "You are an AI language model. You are a cautious assistant and a great math teacher that follows instructions carefully."},
-            # {"role": "assistant", "content": "I will follow the instructions in order to solve the math problems you give me."},
-            # {"role": "user", "content": model_input}
-            # ]
-
-            start = time.time()
-
-            ### Mistral Instruct ###
-
-            encodeds = tokenizer.apply_chat_template(prompt, return_tensors="pt")
-            model_inputs = encodeds.to('cuda')
-            generated_ids = model.generate(model_inputs, max_new_tokens=1000, do_sample=True)
-            decoded = tokenizer.batch_decode(generated_ids)
-            text_output = decoded[0]
-
-            ### ORCA-2 ###
-
             # input_ids = tokenizer(prompt, return_tensors='pt').input_ids.to("cuda")
             # output_ids = model.generate(input_ids)
             # text_output = tokenizer.batch_decode(output_ids)[0]
 
 
-            ### Mistral 8x7 ###
+            ### Mixtral 8x7 ###
 
             # messages = [{"role": "user", "content": model_input}]
             # prompt = model.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
             # outputs = model(prompt, max_new_tokens=1000, do_sample=True, temperature=0.7, top_k=50, top_p=0.95)
             # text_output = outputs[0]["generated_text"]
+
+            ### Starling ###
+
+            input_ids = tokenizer(model_input, return_tensors="pt").input_ids.to('cuda')
+            outputs = model.generate(
+                input_ids,
+                max_length=1000,
+                pad_token_id=tokenizer.pad_token_id,
+                eos_token_id=tokenizer.eos_token_id,
+            )
+            response_ids = outputs[0]
+            text_output = tokenizer.decode(response_ids, skip_special_tokens=True)
 
          
             end = time.time()
@@ -260,6 +245,7 @@ def inference(args, model, tokenizer, math_prompt):
             
             summary = f"EXAMPLE:{i}\nMODEL INPUT:{model_input}\nCORRECT LABEL:{label}\nRESULT:{result}\nLLM:{text_output}\n"
             
+            f.write(math_prompt)
             f.write(summary)
 
         acc = acc/len(testset)
@@ -271,8 +257,8 @@ def inference(args, model, tokenizer, math_prompt):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Settings for Baseline')
-    parser.add_argument('--mode', default='5shot', type=str, help='Use ICL or not. Choose one of: [0shot, 1shot, 3shot, 5shot]')
-    parser.add_argument('--ins', default='cot', type=str, help='Use instruction or not. Choose one of: [icl, cot, ps, instruct]')
+    parser.add_argument('--mode', default='0shot', type=str, help='Use ICL or not. Choose one of: [0shot, 1shot, 3shot, 5shot]')
+    parser.add_argument('--ins', default='instruct', type=str, help='Use instruction or not. Choose one of: [icl, cot, ps, instruct]')
     parser.add_argument('--seed', default=0, type=int, help='Random seed to use for sampling')
 
     args = parser.parse_args()
@@ -288,11 +274,28 @@ if __name__ == "__main__":
     #     model_kwargs={"torch_dtype": torch.float16, "load_in_4bit": True},
     # )
 
+    tokenizer = AutoTokenizer.from_pretrained("berkeley-nest/Starling-LM-7B-alpha")
+    model = AutoModelForCausalLM.from_pretrained("berkeley-nest/Starling-LM-7B-alpha", device_map='auto', torch_dtype=torch.float16)
+    
 
-    model = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-Instruct-v0.1", device_map = 'auto', torch_dtype = torch.float16)
-    tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct-v0.1")
+    math_prompts = [
+            "Let's submerge ourselves in the conundrum, identify vital variables and their numerical values, and establish a plan. As we carry out the plan, let's scrutinize intermediate findings (ensure correct numerical calculations and logical reasoning), tackle the problem progressively, and unveil the answer",
+            "Let's work this out in a step by step way to be sure we have the right answer.",
+            "Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step",
+            "Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and common sense), solve the problem step by step, and show the answer",
+            "Let's think step by step",
+            # # "Take a deep breath and work on this problem step-by-step.",
+            # "Draw parallels between the current problem and similar problems that have been solved before",
+            # "Let's be very precise and accurate in our calculations.", # suggested by gpt this one and downwards 
+            # "This is very important, so do your best.",
+            # "DO NOT GET THIS WRONG PLEASE.",
+            # "This is very important, so do your best."
+            # "Use an abstract and unconventional thinking style",
+            # "Let's look at this from multiple perspectives",
+            # "Inhale deeply, exhale slowly, and embark on this problem-solving journey with a step-by-step mindset",
+    ]
 
-    math_prompts = shorter_prompts
+
     modes = ['0shot']
     instructions = ['instruct']
 
