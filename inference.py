@@ -122,7 +122,6 @@ def generate_mixed_choices(choices):
 #     "Divide the topic into smaller, digestible sections and examine it thoroughly, while gradually reducing the speed of discussion",
 #     "Let's submerge ourselves in the conundrum, identify vital variables and their numerical values, and establish a plan. As we carry out the plan, let's scrutinize intermediate findings (ensure correct numerical calculations and logical reasoning), tackle the problem progressively, and unveil the answer",
 #     "Let's understand the problem, devise a step-by-step plan, and ensure precise and accurate calculations to find the right answer"
-
 # ]
 
 gsm8k_initial_prompts = [
@@ -137,11 +136,12 @@ gsm8k_initial_prompts = [
     "Compute the solution with a calculated, stepwise approach",
     "Let's be very precise and accurate in our calculations",
     "Our approach will be to methodically work through the problem, ensuring accuracy at each step to derive the correct answer",
-    "Slow down, let's break this down into manageable steps"
+    "Slow down, let's break this down into manageable steps",
+    "Inhale deeply, exhale slowly, and embark on this problem-solving journey with a step-by-step mindset",
+    "Focus on strategic thinking to swiftly find the accurate solution",
     "Let's submerge ourselves in the conundrum, identify vital variables and their numerical values, and establish a plan. As we carry out the plan, let's scrutinize intermediate findings (ensure correct numerical calculations and logical reasoning), tackle the problem progressively, and unveil the answer",
-    "Focus on strategic thinking to swiftly find the accurate solution"
     "Divide the topic into smaller, digestible sections and examine it thoroughly, while gradually reducing the speed of discussion",
-
+    "Focus on strategic thinking to swiftly find the accurate solution",
 ]
 
 csqa_initial_prompts = [
@@ -199,8 +199,27 @@ class InferenceEvalauator:
                     generated_ids = self.model.generate(gen_input, max_new_tokens = 250)
                     decoded = self.tokenizer.batch_decode(generated_ids)
                     text_output = decoded[0]
+                    lines = text_output.split('\n')  
+                    found_A = False
+                    modified_string = ''
+                    for line in lines:
+                        if found_A:
+                            modified_string += line + '\n'  
+                        elif line.startswith('A:'):
+                            found_A = True
+                        text_output = modified_string.replace("<|im_end|>", "")
 
-                    text_output = text_output.split("A:<|im_end|>")[1]
+                elif self.args.model == 'orca':
+
+                    # system_message = "From now on, you are an excellent math teacher and always teach your students math problems correctly. And I am one of your students."
+                    # prompt = f"<|im_start|>system\n{system_message}<|im_end|>\n<|im_start|>user\n{model_input}<|im_end|>\n<|im_start|>assistant"
+                    prompt = f"<|im_start|>user\n{model_input}<|im_end|>\n<|im_start|>assistant"
+                    inputs = self.tokenizer(prompt, return_tensors='pt').to('cuda')
+                    output_ids = self.model.generate(inputs["input_ids"], max_new_tokens = 400)
+                    text_output = self.tokenizer.batch_decode(output_ids)[0]
+                    text_output = text_output.split('<|im_start|>assistant')[-1]
+                    text_output = text_output.split('</s>')[0]
+                    text_output = text_output.split('A:')[-1]
 
                 accuracy += evaluate_GSM8K(text_output, label)
 
@@ -235,7 +254,7 @@ if __name__ == "__main__":
     parser.add_argument('--task', default='gsm8k', type=str, help='Task to be solved. Choose one of: [gsm8k, csqa]')
     parser.add_argument('--use_icl_examples', default=False, type=bool, help='whether to use in-context learning examples or not')
     parser.add_argument('--num_icl_examples', default=1, type=int, help='number of in-context learning examples used for evaluation')
-    parser.add_argument('--model', default='openchat', type=str, help='which model to use')
+    parser.add_argument('--model', default='openhermes', type=str, help='which model to use')
     parser.add_argument('--seed', default=0, type=int, help='type of mutation')
     args = parser.parse_args()
     
@@ -256,6 +275,11 @@ if __name__ == "__main__":
 
         tokenizer = AutoTokenizer.from_pretrained("openchat/openchat_3.5")
         model = AutoModelForCausalLM.from_pretrained("openchat/openchat_3.5", torch_dtype = torch.float16)
+
+    elif args.model == 'orca':
+
+        tokenizer = AutoTokenizer.from_pretrained("microsoft/Orca-2-7b")
+        model = AutoModelForCausalLM.from_pretrained("microsoft/Orca-2-7b", torch_dtype = torch.float16)
 
     model = model.to('cuda')
     
