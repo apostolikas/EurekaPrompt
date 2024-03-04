@@ -27,7 +27,8 @@ class GenPrompt:
             initial_prompts = gsm8k_initial_prompts
         elif args.task == 'csqa':
             # cot, ps, ps+
-            initial_prompts = csqa_initial_prompts
+            # initial_prompts = csqa_initial_prompts
+            initial_prompts = gsm8k_initial_prompts
         return initial_prompts
 
 
@@ -68,9 +69,12 @@ class GenPrompt:
             samples = random.sample(self.testset, self.args.num_of_samples)
 
             for sample in tqdm(samples):
-                question = sample['question']
-                choices = sample['mixed_choices']
-                label = sample['label']
+                # question = sample['question']
+                # choices = sample['mixed_choices']
+                # label = sample['label']
+                question = sample['question']['stem']
+                choices = sample['choice_answers']
+                label = sample['answerKey']
 
                 if self.args.use_icl_examples:
                     # include contrastive cot examples
@@ -80,6 +84,8 @@ class GenPrompt:
                     model_input = f'''Question: {question}\nAnswer Choices: {choices}\nAnswer: {prompt}'''
                 input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
                 text_output = self.model.get_response(input_prompt)
+                text_output = text_output.split('GPT4 Correct Assistant:')[1]
+
                 fitness += evaluate_CSQA(text_output, choices, label)
 
         fitness = fitness/self.args.num_of_samples
@@ -175,7 +181,7 @@ if __name__ == "__main__":
     parser.add_argument('--seed', default=0, type=int, help='type of mutation')
     parser.add_argument('--mutate_population', default=True, type=bool, help='whether to mutate the population or not')
     args = parser.parse_args()
-    
+    print(args)
     logger_name = f"Evo_{args.task}_output.log"
     logger = setup_logger('progress_logger', logger_name)
 
@@ -192,10 +198,24 @@ if __name__ == "__main__":
         trainset = list(map(add_label, original_train_dataset))
     
     elif args.task == 'csqa':
-        original_test_dataset = load_dataset("commonsense_qa", split='validation')
-        testset = list(map(lambda instance: {**instance, 'mixed_choices': generate_mixed_choices(instance['choices'])}, original_test_dataset))
-        original_train_dataset = load_dataset("commonsense_qa", split='train')
-        trainset = list(map(lambda instance: {**instance, 'mixed_choices': generate_mixed_choices(instance['choices'])}, original_train_dataset))
+        # original_test_dataset = load_dataset("commonsense_qa", split='validation')
+        # testset = list(map(lambda instance: {**instance, 'mixed_choices': generate_mixed_choices(instance['choices'])}, original_test_dataset))
+
+        # original_train_dataset = load_dataset("commonsense_qa", split='train')
+        # trainset = list(map(lambda instance: {**instance, 'mixed_choices': generate_mixed_choices(instance['choices'])}, original_train_dataset))
+
+        testset = read_jsonl('./data/csqa_val.jsonl')
+        for item in testset:
+            choices = item["question"]["choices"]
+            choice_answers = ", ".join(map(format_choice, choices))
+            item["choice_answers"] = choice_answers
+
+        trainset = read_jsonl('./data/csqa_train.jsonl')
+        for item in trainset:
+            choices = item["question"]["choices"]
+            choice_answers = ", ".join(map(format_choice, choices))
+            item["choice_answers"] = choice_answers
+            
     else:
         raise ValueError("Task not supported")
 
