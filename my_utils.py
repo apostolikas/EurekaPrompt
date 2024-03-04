@@ -7,7 +7,9 @@ import json
 def read_jsonl(path: str):
     with open(path) as fh:
         return [json.loads(line) for line in fh.readlines() if line]
-
+    
+def format_choice(choice):
+    return "({}) {}".format(choice["label"], choice["text"])
 
 class SocraticGPT:
     def __init__(self, model, tokenizer):
@@ -206,14 +208,14 @@ gsm8k_initial_prompts = [
     "Take a deep breath and work on this problem step-by-step",
     "Break this down",
     "A little bit of arithmetic and a logical approach will help us quickly arrive at the solution to this problem",
-    # "Let's combine our numerical command and clear thinking to quickly and accurately decipher the answer",
+    "Let's combine our numerical command and clear thinking to quickly and accurately decipher the answer",
     "Let's be very precise and accurate in our calculations",
     "Let's create a simplified version of the problem to gain insights and test potential solutions",
     "Embark on a journey to derive the solution to this problem",
     "Compute the solution with a calculated, stepwise approach",
     "Let's be very precise and accurate in our calculations",
     "Our approach will be to methodically work through the problem, ensuring accuracy at each step to derive the correct answer",
-    "Slow down, let's break this down into manageable steps"
+    "Slow down, let's break this down into manageable steps",
     "Inhale deeply, exhale slowly, and embark on this problem-solving journey with a step-by-step mindset",
 
 ]
