@@ -1,10 +1,6 @@
-els_data/
 *.out
 *.txt
 /jobs
 __pycache__/
 *.log
-embase_tasks/
-reaxys_tasks/
-prompts/
-gpt_inference/
+/data
