@@ -1,14 +1,15 @@
-from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from tqdm import tqdm
 import random
 import argparse
 import logging
+import re 
 from my_utils import *
+from prompts import *
 import torch
 from transformers.utils import logging
 logging.get_logger("transformers").setLevel(logging.ERROR)
-import re 
+
 
 class GenPrompt:
     def __init__(self, args, testset, model, tokenizer, trainset):
@@ -20,15 +21,21 @@ class GenPrompt:
         self.initial_population = self.initialise_population(self.args)
         self.helper_model = model
         
-    def initialise_population(self, args):
+    def initialise_population(self):
 
-        if args.task == 'gsm8k':
-            # cot, ps, ps+, ape, opro
+        if self.args.task == 'gsm8k':
             initial_prompts = gsm8k_initial_prompts
-        elif args.task == 'csqa':
-            # cot, ps, ps+
-            # initial_prompts = csqa_initial_prompts
-            initial_prompts = gsm8k_initial_prompts
+        elif self.args.task == 'svamp':
+            initial_prompts = svamp_initial_prompts
+        elif self.args.task == 'aqua':
+            initial_prompts = aqua_initial_prompts
+        elif self.args.task == 'strategyqa':
+            initial_prompts = strategyqa_initial_prompts
+        elif self.args.task == 'csqa':
+            initial_prompts = csqa_initial_prompts
+        else:
+            raise ValueError("Task not supported")
+
         return initial_prompts
 
 
@@ -69,9 +76,6 @@ class GenPrompt:
             samples = random.sample(self.testset, self.args.num_of_samples)
 
             for sample in tqdm(samples):
-                # question = sample['question']
-                # choices = sample['mixed_choices']
-                # label = sample['label']
                 question = sample['question']['stem']
                 choices = sample['choice_answers']
                 label = sample['answerKey']
@@ -79,14 +83,71 @@ class GenPrompt:
                 if self.args.use_icl_examples:
                     # include contrastive cot examples
                     icl_prompt = construct_icl_examples_csqa(self.trainset, self.initial_population, self.args.num_icl_examples, prompt)
-                    model_input = f'''{icl_prompt}Question: {question}\nAnswer: {prompt}'''
+                    model_input = f'''{icl_prompt}Question: {question}\nAnswer Choices: {choices}\nAnswer: {prompt}'''
                 else:
                     model_input = f'''Question: {question}\nAnswer Choices: {choices}\nAnswer: {prompt}'''
                 input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
                 text_output = self.model.get_response(input_prompt)
                 text_output = text_output.split('GPT4 Correct Assistant:')[1]
+                fitness += evaluate_CSQA(text_output, label)
 
-                fitness += evaluate_CSQA(text_output, choices, label)
+
+        elif self.args.task == 'strategyqa':
+            random.seed(self.args.seed)
+            samples = random.sample(self.testset, self.args.num_of_samples)
+
+            for sample in tqdm(samples):
+                question = sample['question']
+                label = sample['answer']
+
+                if self.args.use_icl_examples:
+                    # include contrastive cot examples
+                    icl_prompt = construct_icl_examples_strategyqa(self.trainset, self.initial_population, self.args.num_icl_examples, prompt)
+                    model_input = f'''{icl_prompt}Question: Yes or no: {question}\nAnswer: {prompt}'''
+                else:
+                    model_input = f'''Question: Yes or no: {question}\nAnswer: {prompt}'''
+                input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
+                text_output = self.model.get_response(input_prompt)
+                fitness += evaluate_StrategyQA(text_output, label)
+
+
+        elif self.args.task == 'svamp':
+            random.seed(self.args.seed)
+            samples = random.sample(self.testset, self.args.num_of_samples)
+
+            for sample in tqdm(samples):
+                question = sample['full_question']
+                label = sample['Answer']
+
+                if self.args.use_icl_examples:
+                    # include contrastive cot examples
+                    icl_prompt = construct_icl_examples_svamp(self.trainset, self.initial_population, self.args.num_icl_examples, prompt)
+                    model_input = f'''{icl_prompt}Question: {question}\nAnswer: {prompt}'''
+                else:
+                    model_input = f'''Question: {question}\nAnswer: {prompt}'''
+                input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
+                text_output = self.model.get_response(input_prompt)
+                fitness += evaluate_SVAMP(text_output, label)
+
+        elif self.args.task == 'aqua':
+            random.seed(self.args.seed)
+            samples = random.sample(self.testset, self.args.num_of_samples)
+
+            for sample in tqdm(samples):
+                question = sample['question']
+                label = sample['correct']
+                choices = sample['answer_choices']
+
+                if self.args.use_icl_examples:
+                    # include contrastive cot examples
+                    icl_prompt = construct_icl_examples_aqua(self.trainset, self.initial_population, self.args.num_icl_examples, prompt)
+                    model_input = f'''{icl_prompt}Question: {question}\nAnswer Choices: {choices}\nAnswer: {prompt}'''
+                else:
+                    model_input = f'''Question: {question}\nAnswer Choices: {choices}\nAnswer: {prompt}'''
+                input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
+                text_output = self.model.get_response(input_prompt)
+                text_output = text_output.split('GPT4 Correct Assistant:')[1]
+                fitness += evaluate_CSQA(text_output, label)
 
         fitness = fitness/self.args.num_of_samples
 
@@ -94,13 +155,14 @@ class GenPrompt:
 
 
     def select_parents(self, fitness_dict):
+        random.seed() # delete
         return random.sample(list(fitness_dict.keys()), 2)
-
 
     def crossover(self, parents):
 
         parent_prompt1 = parents[0]
         parent_prompt2 = parents[1]
+        print(f"The parents are: {[parent_prompt1, parent_prompt2]}")
         final_prompt = crossover_dialogue(self.helper_model, parent_prompt1, parent_prompt2)
         final_prompt = final_prompt[-1]
         print(f"child prompt is a {type(final_prompt)}: {final_prompt}")
@@ -110,16 +172,17 @@ class GenPrompt:
 
     def mutate(self, child, population, fitness_dict):
 
-        if self.args.task == 'csqa':
-            mutation_styles = csqa_mutation_styles
-        elif self.args.task == 'gsm8k':
-            mutation_styles = gsm8k_mutation_styles
+        if self.args.task == 'csqa' or self.args.task == 'strategyqa':
+            mutation_styles = commonsense_mutation_styles
+        elif self.args.task == 'gsm8k' or self.args.task == 'svamp' or self.args.task == 'aqua':
+            mutation_styles = math_mutation_styles
         else:
             raise ValueError("Task not supported")
 
         new_prompts = []
 
         if random.random() > 0.5:
+            random.seed() # delete
             mutation_style = random.choice(mutation_styles)
             print(f"Mutating the child with mutation style with index: {mutation_styles.index(mutation_style)}")
             #mutated_child = mutation_dialogue(self.helper_model, mutation_style, child)
@@ -131,12 +194,13 @@ class GenPrompt:
             new_prompts.append(mutated_child)
 
         if self.args.mutate_population:
+            random.seed() # delete
             print("Mutating random prompts from the population")
             mutation_style = random.choice(mutation_styles)
             random_prompt = random.choice(population)
             print(f"The prompt that will be mutated is: {random_prompt}")
 
-            use_words = True if random.random() > 0 else False
+            use_words = True if random.random() > 0.3 else False
 
             if use_words == True:
 
@@ -172,13 +236,13 @@ class GenPrompt:
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='Settings for the Evolutionary Algorithms')
-    parser.add_argument('--task', default='csqa', type=str, help='Task to be solved. Choose one of: [gsm8k, csqa]')
+    parser.add_argument('--task', default='aqua', type=str, help='Task to be solved. Choose one of: [gsm8k, csqa, aqua, svamp, strategyqa]')
     parser.add_argument('--use_icl_examples', default=False, type=bool, help='whether to use in-context learning examples or not')
     parser.add_argument('--num_icl_examples', default=1, type=int, help='number of in-context learning examples used for evaluation')
     parser.add_argument('--num_of_samples', default=50, type=int, help='number of samples used for evaluation')
     parser.add_argument('--iterations', default=20, type=int, help='number of iterations for the EA')
     parser.add_argument('--number_of_mutations', default=1, type=int, help='number of mutations to perform')
-    parser.add_argument('--seed', default=0, type=int, help='type of mutation')
+    parser.add_argument('--seed', default=7, type=int, help='type of mutation')
     parser.add_argument('--mutate_population', default=True, type=bool, help='whether to mutate the population or not')
     args = parser.parse_args()
     print(args)
@@ -196,14 +260,15 @@ if __name__ == "__main__":
         testset = list(map(add_label, original_test_dataset))
         original_train_dataset = read_jsonl('./data/gsm8k_train.jsonl')
         trainset = list(map(add_label, original_train_dataset))
-    
+
+    elif args.task == 'svamp':
+        with open('./data/SVAMP.json') as f:
+            testset = json.load(f)
+        testset = list(map(lambda x: {**x, 'full_question': x['Body'] + ' ' + x['Question']}, testset))
+        testset = list(map(lambda x: {**x, 'Answer': int(x['Answer']) if x['Answer'].is_integer() else x['Answer']}, testset))
+        trainset = testset
+
     elif args.task == 'csqa':
-        # original_test_dataset = load_dataset("commonsense_qa", split='validation')
-        # testset = list(map(lambda instance: {**instance, 'mixed_choices': generate_mixed_choices(instance['choices'])}, original_test_dataset))
-
-        # original_train_dataset = load_dataset("commonsense_qa", split='train')
-        # trainset = list(map(lambda instance: {**instance, 'mixed_choices': generate_mixed_choices(instance['choices'])}, original_train_dataset))
-
         testset = read_jsonl('./data/csqa_val.jsonl')
         for item in testset:
             choices = item["question"]["choices"]
@@ -215,7 +280,18 @@ if __name__ == "__main__":
             choices = item["question"]["choices"]
             choice_answers = ", ".join(map(format_choice, choices))
             item["choice_answers"] = choice_answers
-            
+
+    elif args.task == 'strategyqa':
+        with open('./data/strategyqa_train.json')as f:
+            testset = json.load(f) 
+        trainset = testset
+
+    elif args.task == 'aqua':
+        testset = read_jsonl('./data/aqua_test.json')
+
+        for instance in testset:
+            instance['answer_choices'] = format_aqua_options(instance['options'])
+        trainset = testset
     else:
         raise ValueError("Task not supported")
 
@@ -224,7 +300,7 @@ if __name__ == "__main__":
 
     best_fitness = 0
     stagnation_count = 0
-    patience = 5
+    patience = 10
 
     for iter in range(args.iterations):
 
@@ -234,16 +310,6 @@ if __name__ == "__main__":
             population = prompt_engine.initialise_population(args)
             print(f"The population is {population}")
             fitness_dict = prompt_engine.evaluate_population(population)
-
-            # fitness_dict = {"Let's think step by step" : 0.7,
-            #                 "Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step" : 0.64,
-            #                 "Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a plan. Then, let's carry out the plan, calculate the intermediate results (pay attention to calculation and common sense), solve the problem step by step, and show the answer" : 0.62,
-            #                 "Let's work this out in a step by step way to be sure we have the right answer": 0.74,
-            #                 "Take a deep breath and work on this problem step-by-step": 0.7,
-            #                 "Break this down": 0.78,
-            #                 "A little bit of arithmetic and a logical approach will help us quickly arrive at the solution to this problem": 0.76,
-                            # "Let's combine our numerical command and clear thinking to quickly and accurately decipher the answer":0.8
-                            # }
 
             for prompt in population:
                 logger.info(f"Population: {prompt} with fitness {fitness_dict[prompt]}")
