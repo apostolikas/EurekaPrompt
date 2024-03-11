@@ -108,6 +108,7 @@ class GenPrompt:
                     model_input = f'''Question: Yes or no: {question}\nAnswer: {prompt}'''
                 input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
                 text_output = self.model.get_response(input_prompt)
+                text_output = text_output.split('GPT4 Correct Assistant:')[1]
                 fitness += evaluate_StrategyQA(text_output, label)
 
 
@@ -127,6 +128,7 @@ class GenPrompt:
                     model_input = f'''Question: {question}\nAnswer: {prompt}'''
                 input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
                 text_output = self.model.get_response(input_prompt)
+                text_output = text_output.split('GPT4 Correct Assistant:')[1]
                 fitness += evaluate_SVAMP(text_output, label)
 
         elif self.args.task == 'aqua':
