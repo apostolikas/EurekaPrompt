@@ -11,6 +11,10 @@ def read_jsonl(path: str):
 def format_choice(choice):
     return "({}) {}".format(choice["label"], choice["text"])
 
+def format_aqua_options(options):
+    formatted_options = [f"({option[0]}) {option[2:]}" for option in options]
+    return ", ".join(formatted_options)
+
 class SocraticGPT:
     def __init__(self, model, tokenizer):
         self.tokenizer = tokenizer
@@ -127,6 +131,61 @@ def construct_icl_examples_csqa(samples, number_of_icl_examples, seed, instructi
 
     return icl_prompt
 
+
+def construct_icl_examples_strategyqa(samples, number_of_icl_examples, seed, instruction):
+    random.seed(seed)
+    icl_examples = random.sample(list(samples), number_of_icl_examples)
+    icl_prompt = f""
+
+    if instruction == None:
+        for i in range(len(icl_prompt)):
+            if icl_examples[i]['answer'] == True:
+                short_answer = 'yes'
+            else:
+                short_answer = 'no'
+            answer = " ".join(f for f in icl_examples[i]['facts']) + f" The answer is {short_answer}."
+            icl_prompt += f"Question: {icl_examples[i]['question']}\nAnswer: {answer}\n\n"
+    else:
+        for i in range(len(icl_prompt)):
+            if icl_examples[i]['answer'] == True:
+                short_answer = 'yes'
+            else:
+                short_answer = 'no'
+            answer = " ".join(f for f in icl_examples[i]['facts']) + f" The answer is {short_answer}."
+            icl_prompt += f"Question: {icl_examples[i]['question']}\nAnswer: {instruction}\n{answer}\n\n"
+
+    return icl_prompt
+
+
+def construct_icl_examples_svamp(samples, number_of_icl_examples, seed, instruction):
+    random.seed(seed)
+    icl_examples = random.sample(list(samples), number_of_icl_examples)
+    icl_prompt = f""
+
+    if instruction == None:
+        for i in range(len(icl_prompt)):
+            icl_prompt += f"Question: {icl_examples[i]['question']}\nAnswer: {icl_examples[i]['Equation']}= {str(icl_examples[i]['answer'])}. The answer is {str(icl_examples[i]['answer'])}.\n\n"
+    else:
+        for i in range(len(icl_prompt)):
+            icl_prompt += f"Question: {icl_examples[i]['question']}\nAnswer: {instruction}\n{icl_examples[i]['Equation']}= {str(icl_examples[i]['answer'])}. The answer is {str(icl_examples[i]['answer'])}.\n\n"
+    return icl_prompt
+
+
+def construct_icl_examples_aqua(samples, number_of_icl_examples, seed, instruction):
+    random.seed(seed)
+    icl_examples = random.sample(list(samples), number_of_icl_examples)
+    icl_prompt = f""
+
+    if instruction == None:
+        for i in range(len(icl_prompt)):
+            icl_prompt += f"Question: {icl_examples[i]['question']}\nAnswer choices: {icl_examples[i]['answer_choices']}\nAnswer: {icl_examples[i]['rationale']}\n\n"
+    else:
+        for i in range(len(icl_prompt)):
+            icl_prompt += f"Question: {icl_examples[i]['question']}\nAnswer choices: {icl_examples[i]['answer_choices']}\nAnswer: {instruction}\n{icl_examples[i]['rationale']}\n\n"
+
+    return icl_prompt
+
+
 def contstruct_mutation_prompt(fitness_dict):
     sorted_texts = sorted(fitness_dict.items(), key = lambda x:x[1])
     top_5 = sorted_texts[-5:]
@@ -163,25 +222,41 @@ def evaluate_GSM8K(y_pred, label):
     else:
         return 0
 
-def evaluate_CSQA(y_pred, choices, label):
-    label_text = None
-    for choice in choices.split(','):
-        choice = choice.strip()
-        if choice.startswith("(" + label + ")"):
-            label_text = choice.split(')')[1].strip()
-            break
 
-    if label_text is None:
-        return "Invalid label provided"
-
-    label_text_words = set(label_text.split())
-    y_pred_words = set(y_pred.split())
-
-    if label_text_words.intersection(y_pred_words) or label in y_pred:
-        return 1  
+def evaluate_CSQA(y_pred, label):
+    answer = re.findall(r'A|B|C|D|E', y_pred)
+    answer = answer[0] if len(answer) > 0 else ""
+    if answer == label:
+        return 1
     else:
         return 0
+    
 
+def evaluate_StrategyQA(pred, label):
+    if label == True:
+        label = "yes"
+    else:
+        label = "no"
+    pred = pred.lower()
+    pred = re.sub("\"|\'|\n|\.|\s|\:|\,"," ", pred)
+    pred = pred.split(" ")
+    pred = [i for i in pred if i in ("yes", "no")][-1]
+    if pred == label:
+        return 1
+    else:
+        return 0
+    
+def evaluate_SVAMP(pred, label):
+    pred = pred.replace(",", "")
+    pred = [s for s in re.findall(r'-?\d+\.?\d*', pred)]
+    if pred == []:
+        return 0
+    pred = pred[-1]
+    if pred == str(label):
+        return 1
+    else:
+        return 0
+    
 
 def add_label(entry):
 
@@ -198,72 +273,3 @@ def generate_mixed_choices(choices):
         mixed_choices += f"({label}) {choice_text}, "
     mixed_choices = mixed_choices[:-2] 
     return mixed_choices
-
-
-gsm8k_initial_prompts = [
-    "Let's think step by step",
-    "Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step",
-    "Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a plan. Then, let's carry out the plan, calculate the intermediate results (pay attention to calculation and common sense), solve the problem step by step, and show the answer",
-    "Let's work this out in a step by step way to be sure we have the right answer",
-    "Take a deep breath and work on this problem step-by-step",
-    "Break this down",
-    "A little bit of arithmetic and a logical approach will help us quickly arrive at the solution to this problem",
-    "Let's combine our numerical command and clear thinking to quickly and accurately decipher the answer",
-    "Let's be very precise and accurate in our calculations",
-    "Let's create a simplified version of the problem to gain insights and test potential solutions",
-    "Embark on a journey to derive the solution to this problem",
-    "Compute the solution with a calculated, stepwise approach",
-    "Let's be very precise and accurate in our calculations",
-    "Our approach will be to methodically work through the problem, ensuring accuracy at each step to derive the correct answer",
-    "Slow down, let's break this down into manageable steps",
-    "Inhale deeply, exhale slowly, and embark on this problem-solving journey with a step-by-step mindset",
-
-]
-
-csqa_initial_prompts = [
-    "Let's think step by step",
-    "Let's devise a plan and solve the problem step by step"
-    "Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a plan. Then, let's carry out the plan, calculate the intermediate results (pay attention to calculation and common sense), solve the problem step by step, and show the answer",
-]
-
-# csqa_mutation_styles = [
-#     "The mutation is a variant of the input prompt that introduces a structured thought process.",
-#     "The mutation is a variant of the input prompt that highlights strategic thought processes and logical reasoning.",
-#     "The mutation is a variant of the input prompt that introduces logic and makes it easier to understand.",
-#     "The mutation is a variant of the input prompt that focuses on logic and reasoning.",
-#     "The mutation is a variant of the input prompt that adds more details.",
-#     "The mutation is a variant of the input prompt that makes it more well-considered and logical.",
-#     ]
-
-# gsm8k_mutation_styles = [
-#     "The mutation is a variant of the input prompt that introduces a structured thought process.",
-#     "The mutation is a variant of the input prompt that highlights strategic thought processes and mathematical reasoning.",
-#     "The mutation is a variant of the input prompt that introduces mathematical reasoning and makes it easier to understand.",
-#     "The mutation is a variant of the input prompt that focuses on mathematical reasoning and logical thinking.",
-#     "The mutation is a variant of the input prompt that adds more details.",
-#     "The mutation is a variant of the input prompt that makes it more well-considered and logical.",
-#     ]
-
-
-csqa_mutation_styles = [
-    "The mutation is a variant of the input prompt that introduces a structured thought process.",
-    "The mutation is a variant of the input prompt using unconventional thinking.",
-    "The mutation is a variant of the input prompt that provides an alternative viewpoint.",
-    "The mutation presents a tweaked version of the task, emphasizing logical steps in problem-solving.",
-    "This variant of the prompt, through mutation, offers a fresh perspective on the problem, focusing on strategic thinking.",
-    "Through mutation, the prompt is altered to showcase problem-solving strategies and logical reasoning.",
-    "The mutation introduces a revised version of the prompt, aiming to illuminate the process of logical reasoning and problem-solving.",
-    ]
-
-gsm8k_mutation_styles = [
-    "The mutation is a variant of the input prompt that introduces a structured thought process.",
-    # "The mutation is a variant of the input prompt that highlights strategic thought processes and mathematical reasoning.",
-    # "The mutation is a variant of the input prompt that introduces mathematical reasoning and makes it easier to understand.",
-    "The mutation is a variant of the input prompt using unconventional thinking.",
-    "The mutation is a variant of the input prompt that provides an alternative viewpoint.",
-    # "The mutation is a variant of the input prompt that makes it more well-considered and logical.",
-    "The mutation presents a tweaked version of the task, emphasizing logical steps in problem-solving.",
-    "This variant of the prompt, through mutation, offers a fresh perspective on the problem, focusing on strategic thinking.",
-    "Through mutation, the prompt is altered to showcase problem-solving strategies and logical reasoning.",
-    "The mutation introduces a revised version of the prompt, aiming to illuminate the process of logical reasoning and problem-solving.",
-    ]
