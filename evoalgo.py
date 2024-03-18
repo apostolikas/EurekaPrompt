@@ -18,7 +18,7 @@ class GenPrompt:
         self.trainset = trainset
         self.model = model
         self.tokenizer = tokenizer
-        self.initial_population = self.initialise_population(self.args)
+        self.initial_population = self.initialise_population()
         self.helper_model = model
         
     def initialise_population(self):
@@ -174,10 +174,16 @@ class GenPrompt:
 
     def mutate(self, child, population, fitness_dict):
 
-        if self.args.task == 'csqa' or self.args.task == 'strategyqa':
+        if self.args.task == 'csqa':
             mutation_styles = commonsense_mutation_styles
-        elif self.args.task == 'gsm8k' or self.args.task == 'svamp' or self.args.task == 'aqua':
-            mutation_styles = math_mutation_styles
+        elif self.args.task == 'strategyqa':
+            mutation_styles = strategyqa_mutation_styles
+        elif self.args.task == 'gsm8k':
+            mutation_styles = gsm8k_mutation_styles
+        elif self.args.task == 'aqua':
+            mutation_styles = aqua_mutation_styles
+        elif self.args.task == 'svamp':
+            mutation_styles = svamp_mutation_styles
         else:
             raise ValueError("Task not supported")
 
@@ -244,8 +250,9 @@ if __name__ == "__main__":
     parser.add_argument('--num_of_samples', default=50, type=int, help='number of samples used for evaluation')
     parser.add_argument('--iterations', default=20, type=int, help='number of iterations for the EA')
     parser.add_argument('--number_of_mutations', default=1, type=int, help='number of mutations to perform')
-    parser.add_argument('--seed', default=7, type=int, help='type of mutation')
+    parser.add_argument('--seed', default=42, type=int, help='type of mutation')
     parser.add_argument('--mutate_population', default=True, type=bool, help='whether to mutate the population or not')
+    parser.add_argument('--patience', default=5, type=int, help='after how many bad results we stop')
     args = parser.parse_args()
     print(args)
     logger_name = f"Evo_{args.task}_output.log"
@@ -302,14 +309,14 @@ if __name__ == "__main__":
 
     best_fitness = 0
     stagnation_count = 0
-    patience = 10
+    patience = args.patience
 
     for iter in range(args.iterations):
 
         if iter == 0:
             logger.info(f"Arguments: {args}")
             logger.info(f"Evaluation of the initial population")
-            population = prompt_engine.initialise_population(args)
+            population = prompt_engine.initialise_population()
             print(f"The population is {population}")
             fitness_dict = prompt_engine.evaluate_population(population)
 
