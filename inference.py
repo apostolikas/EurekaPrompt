@@ -340,18 +340,33 @@ if __name__ == "__main__":
     else:
         raise ValueError("Task not supported")
 
-    if args.task == 'gsm8k':
-        initial_population = gsm8k_initial_prompts
-    elif args.task == 'svamp':
-        initial_population = svamp_initial_prompts
-    elif args.task == 'aqua':
-        initial_population = aqua_initial_prompts
-    elif args.task == 'strategyqa':
-        initial_population = strategyqa_initial_prompts
-    elif args.task == 'csqa':
-        initial_population = csqa_initial_prompts
-    else:
-        raise ValueError("Task not supported")
+    # if args.task == 'gsm8k':
+    #     initial_population = gsm8k_initial_prompts
+    # elif args.task == 'svamp':
+    #     initial_population = svamp_initial_prompts
+    # elif args.task == 'aqua':
+    #     initial_population = aqua_initial_prompts
+    # elif args.task == 'strategyqa':
+    #     initial_population = strategyqa_initial_prompts
+    # elif args.task == 'csqa':
+    #     initial_population = csqa_initial_prompts
+    # else:
+    #     raise ValueError("Task not supported")
+
+    initial_population = [
+        # "Let's be very precise and accurate in our calculations: Compute the solution with a stepwise approach",
+        "",
+        "This is very important to my career",
+        # "Let's think step by step",
+        # "Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step",
+        # "Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a complete plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer",
+        # "Let's work this out in a step by step way to be sure we have the right answer",
+        # "Take a deep breath and work on this problem step-by-step",
+        # "Break this down",
+        # "A little bit of arithmetic and a logical approach will help us quickly arrive at the solution to this problem",
+        # "Let's combine our numerical command and clear thinking to quickly and accurately decipher the answer",
+        # "Let's recognize the fundamental aspects of the problem, pinpoint crucial variables and their values, and establish a methodical plan. Following that, let's carry out the plan, keep track of intermediate results (maintaining precision and logical coherence), and systematically tackle the problem step by step, ultimately disclosing the solution and illustrating the answer",
+    ]
 
     inference_engine = InferenceEvalauator(args, testset, model, tokenizer, trainset, initial_population)
 
