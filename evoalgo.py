@@ -33,6 +33,8 @@ class GenPrompt:
             initial_prompts = strategyqa_initial_prompts
         elif self.args.task == 'csqa':
             initial_prompts = csqa_initial_prompts
+        elif self.args.task in bb_tasks:
+            initial_prompts = bb_initial_prompts
         else:
             raise ValueError("Task not supported")
 
@@ -150,6 +152,84 @@ class GenPrompt:
                 text_output = self.model.get_response(input_prompt)
                 text_output = text_output.split('GPT4 Correct Assistant:')[1]
                 fitness += evaluate_CSQA(text_output, label)
+        
+        elif self.args.task == 'abs_nar':
+
+            random.seed(self.args.seed)
+            samples = random.sample(self.testset['examples'], self.args.num_of_samples)
+
+            for sample in tqdm(samples):
+                narrative = sample['input']
+                label = sample['label']
+                answer_choices = sample['answer_choices']
+                model_input = f'''Question: Can you choose the most related proverb from the list of 5 proverbs given a narrative?\nNarrative: {narrative}\nAnswer choices: {answer_choices}\nAnswer: {prompt}'''
+                input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
+                text_output = self.model.get_response(input_prompt)
+                text_output = text_output.split('GPT4 Correct Assistant:')[1]
+                fitness += evaluate_CSQA(text_output, label)
+
+        elif self.args.task == 'cause_effect':
+
+            random.seed(self.args.seed)
+            samples = random.sample(self.testset['examples'], self.args.num_of_samples)
+            question = sample['task_prefix']
+
+            for sample in tqdm(samples):
+                label = sample['label']
+                answer_choices = sample['answer_choices']
+                model_input = f'''Question: {question}\nAnswer choices: {answer_choices}\nAnswer: {prompt}'''
+                input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
+                text_output = self.model.get_response(input_prompt)
+                text_output = text_output.split('GPT4 Correct Assistant:')[1]
+                fitness += evaluate_CSQA(text_output, label)
+
+
+        elif self.args.task == 'disamb':
+
+            random.seed(self.args.seed)
+            samples = random.sample(self.testset['examples'], self.args.num_of_samples)
+            question = 'Can you claritfy the meaning of the sentence with ambiguous pronouns?'
+
+            for sample in tqdm(samples):
+                context = sample['input']
+                label = sample['label']
+                answer_choices = sample['answer_choices']
+                model_input = f'''Question: {question}\nSentence: {context}\nAnswer choices: {answer_choices}\nAnswer: {prompt}'''
+                input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
+                text_output = self.model.get_response(input_prompt)
+                text_output = text_output.split('GPT4 Correct Assistant:')[1]
+                fitness += evaluate_CSQA(text_output, label)
+
+        elif self.args.task == 'logic_ded3':
+
+            random.seed(self.args.seed)
+            samples = random.sample(self.testset['examples'], self.args.num_of_samples)
+            question = 'What is the correct answer based on the context?'
+
+            for sample in tqdm(samples):
+                context = sample['input']
+                label = sample['label']
+                answer_choices = sample['answer_choices']
+                model_input = f'''Question: {question}\nContext: {context}\nAnswer choices: {answer_choices}\nAnswer: {prompt}'''
+                input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
+                text_output = self.model.get_response(input_prompt)
+                text_output = text_output.split('GPT4 Correct Assistant:')[1]
+                fitness += evaluate_CSQA(text_output, label)
+
+        elif self.args.task == 'social_iqa' or self.args.task == 'sports_und' or self.args.task == 'date_under' or self.args.task == 'causal_judg':
+
+            random.seed(self.args.seed)
+            samples = random.sample(self.testset['examples'], self.args.num_of_samples)
+
+            for sample in tqdm(samples):
+                question = sample['input']
+                label = sample['label']
+                answer_choices = sample['answer_choices']
+                model_input = f'''Question: {question}\nAnswer choices: {answer_choices}\nAnswer: {prompt}'''
+                input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
+                text_output = self.model.get_response(input_prompt)
+                text_output = text_output.split('GPT4 Correct Assistant:')[1]
+                fitness += evaluate_CSQA(text_output, label)
 
         fitness = fitness/self.args.num_of_samples
 
@@ -184,6 +264,8 @@ class GenPrompt:
             mutation_styles = aqua_mutation_styles
         elif self.args.task == 'svamp':
             mutation_styles = svamp_mutation_styles
+        elif self.args.task in bb_tasks:
+            mutation_styles = bb_mutation_styles
         else:
             raise ValueError("Task not supported")
 
@@ -244,19 +326,21 @@ class GenPrompt:
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='Settings for the Evolutionary Algorithms')
-    parser.add_argument('--task', default='aqua', type=str, help='Task to be solved. Choose one of: [gsm8k, csqa, aqua, svamp, strategyqa]')
+    parser.add_argument('--task', default='abs_nar', type=str, help='Task to be solved. Choose one of: [gsm8k, csqa, aqua, svamp, strategyqa]')
     parser.add_argument('--use_icl_examples', default=False, type=bool, help='whether to use in-context learning examples or not')
     parser.add_argument('--num_icl_examples', default=1, type=int, help='number of in-context learning examples used for evaluation')
-    parser.add_argument('--num_of_samples', default=50, type=int, help='number of samples used for evaluation')
+    parser.add_argument('--num_of_samples', default=35, type=int, help='number of samples used for evaluation')
     parser.add_argument('--iterations', default=20, type=int, help='number of iterations for the EA')
     parser.add_argument('--number_of_mutations', default=1, type=int, help='number of mutations to perform')
-    parser.add_argument('--seed', default=42, type=int, help='type of mutation')
+    parser.add_argument('--seed', default=0, type=int, help='type of mutation')
     parser.add_argument('--mutate_population', default=True, type=bool, help='whether to mutate the population or not')
     parser.add_argument('--patience', default=5, type=int, help='after how many bad results we stop')
     args = parser.parse_args()
     print(args)
     logger_name = f"Evo_{args.task}_output.log"
     logger = setup_logger('progress_logger', logger_name)
+
+    bb_tasks = ['abs_nar', 'causal_judg', 'cause_effect', 'date_under', 'disamb', 'logic_ded3', 'social_iqa', 'sports_und']
 
     tokenizer = AutoTokenizer.from_pretrained("berkeley-nest/Starling-LM-7B-alpha")
     model = AutoModelForCausalLM.from_pretrained("berkeley-nest/Starling-LM-7B-alpha", torch_dtype = torch.float16)
@@ -301,6 +385,14 @@ if __name__ == "__main__":
         for instance in testset:
             instance['answer_choices'] = format_aqua_options(instance['options'])
         trainset = testset
+
+    elif args.task in bb_tasks:
+        with open(f'./data/{args.task}.json') as f:
+            testset = json.load(f)
+
+        testset['examples'] = list(map(process_bb_example, testset['examples']))
+        trainset = testset
+
     else:
         raise ValueError("Task not supported")
 
