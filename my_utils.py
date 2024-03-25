@@ -3,6 +3,7 @@ import random
 import logging
 import re
 import json
+import string 
 
 def read_jsonl(path: str):
     with open(path) as fh:
@@ -14,6 +15,14 @@ def format_choice(choice):
 def format_aqua_options(options):
     formatted_options = [f"({option[0]}) {option[2:]}" for option in options]
     return ", ".join(formatted_options)
+
+def process_bb_example(example):
+    correct_answer = [key for key, value in example['target_scores'].items() if value == 1][0]
+    answer_choices = ', '.join([f'({letter}) {key}' for letter, key in zip(string.ascii_uppercase, example['target_scores'].keys())])
+    label = list(example['target_scores'].keys()).index(correct_answer)
+    example['answer_choices'] = answer_choices
+    example['label'] = string.ascii_uppercase[label]
+    return example
 
 class SocraticGPT:
     def __init__(self, model, tokenizer):
