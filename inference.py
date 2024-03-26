@@ -1,4 +1,4 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, pipeline
 from tqdm import tqdm
 import random
 import argparse
@@ -77,6 +77,18 @@ class InferenceEvalauator:
                         elif line.startswith('A:'):
                             found_A = True
                         text_output = modified_string.replace("<|im_end|>", "")
+
+                elif self.args.model == 'mixtral':
+                    prompt = f"<s>[INST] {model_input} [/INST]"
+                    prompt = self.tokenizer(model_input, return_tensors="pt").to("cuda")
+                    with torch.no_grad():
+                        text_output = self.tokenizer.decode(self.model.generate(**prompt, max_new_tokens=250, pad_token_id=tokenizer.eos_token_id)[0], skip_special_tokens=True)
+
+                    # messages = [{"role": "user", "content": model_input}]
+                    # prompt = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+                    # outputs = self.model(prompt, max_new_tokens=250)
+                    # text_output = outputs[0]["generated_text"]
+
                 else:
                     raise ValueError("Model not supported")
 
@@ -127,7 +139,6 @@ class InferenceEvalauator:
                         text_output = modified_string.replace("<|im_end|>", "")
                 accuracy += evaluate_CSQA(text_output, label)
 
-
         elif self.args.task == 'strategyqa':
             random.seed(self.args.seed)
             samples = random.sample(self.testset, num_of_samples)
@@ -170,7 +181,6 @@ class InferenceEvalauator:
                             found_A = True
                         text_output = modified_string.replace("<|im_end|>", "")
                 accuracy += evaluate_StrategyQA(text_output, label)
-
 
         elif self.args.task == 'svamp':
             random.seed(self.args.seed)
@@ -217,7 +227,7 @@ class InferenceEvalauator:
 
         elif self.args.task == 'aqua':
             random.seed(self.args.seed)
-            samples = random.sample(self.testset, self.args.num_of_samples)
+            samples = random.sample(self.testset, num_of_samples)
 
             for sample in tqdm(samples):
                 question = sample['question']
@@ -233,7 +243,7 @@ class InferenceEvalauator:
                 if self.args.model == 'starling' or self.args.model == 'openchat':
                     input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
                     input_ids = self.tokenizer(input_prompt, return_tensors="pt").input_ids.to('cuda')
-                    outputs = self.model.generate(input_ids, max_new_tokens=250, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
+                    outputs = self.model.generate(input_ids, max_new_tokens=300, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
                     response_ids = outputs[0]
                     text_output = self.tokenizer.decode(response_ids, skip_special_tokens=True)
                     text_output = text_output.split("GPT4 Correct Assistant:")[1]
@@ -259,6 +269,99 @@ class InferenceEvalauator:
                         text_output = modified_string.replace("<|im_end|>", "")
                 accuracy += evaluate_CSQA(text_output, label)
 
+        elif self.args.task == 'abs_nar':
+            num_of_samples = len(self.testset['examples'])
+            random.seed(self.args.seed)
+            samples = random.sample(self.testset['examples'], num_of_samples)
+
+            for sample in tqdm(samples):
+                narrative = sample['input']
+                label = sample['label']
+                answer_choices = sample['answer_choices']
+                model_input = f'''Question: Can you choose the most related proverb from the list of 5 proverbs given a narrative?\nNarrative: {narrative}\nAnswer choices: {answer_choices}\nAnswer: {prompt}'''
+                input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
+                input_ids = self.tokenizer(input_prompt, return_tensors="pt").input_ids.to('cuda')
+                outputs = self.model.generate(input_ids, max_new_tokens=250, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
+                response_ids = outputs[0]
+                text_output = self.tokenizer.decode(response_ids, skip_special_tokens=True)
+                text_output = text_output.split("GPT4 Correct Assistant:")[1]
+                accuracy += evaluate_CSQA(text_output, label)
+
+        elif self.args.task == 'cause_effect':
+            num_of_samples = len(self.testset['examples'])
+            random.seed(self.args.seed)
+            samples = random.sample(self.testset['examples'], num_of_samples)
+            question = self.testset['task_prefix']
+
+            for sample in tqdm(samples):
+                label = sample['label']
+                answer_choices = sample['answer_choices']
+                model_input = f'''Question: {question}\nAnswer choices: {answer_choices}\nAnswer: {prompt}'''
+                input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
+                input_ids = self.tokenizer(input_prompt, return_tensors="pt").input_ids.to('cuda')
+                outputs = self.model.generate(input_ids, max_new_tokens=250, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
+                response_ids = outputs[0]
+                text_output = self.tokenizer.decode(response_ids, skip_special_tokens=True)
+                text_output = text_output.split("GPT4 Correct Assistant:")[1]
+                accuracy += evaluate_CSQA(text_output, label)
+
+
+        elif self.args.task == 'disamb':
+            num_of_samples = len(self.testset['examples'])
+            random.seed(self.args.seed)
+            samples = random.sample(self.testset['examples'], num_of_samples)
+            question = 'Can you claritfy the meaning of the sentence with ambiguous pronouns?'
+
+            for sample in tqdm(samples):
+                context = sample['input']
+                label = sample['label']
+                answer_choices = sample['answer_choices']
+                model_input = f'''Question: {question}\nSentence: {context}\nAnswer choices: {answer_choices}\nAnswer: {prompt}'''
+                input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
+                input_ids = self.tokenizer(input_prompt, return_tensors="pt").input_ids.to('cuda')
+                outputs = self.model.generate(input_ids, max_new_tokens=250, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
+                response_ids = outputs[0]
+                text_output = self.tokenizer.decode(response_ids, skip_special_tokens=True)
+                text_output = text_output.split("GPT4 Correct Assistant:")[1]
+                accuracy += evaluate_CSQA(text_output, label)
+
+        elif self.args.task == 'logic_ded3':
+            num_of_samples = len(self.testset['examples'])
+            random.seed(self.args.seed)
+            samples = random.sample(self.testset['examples'], num_of_samples)
+            question = 'What is the correct answer based on the context?'
+
+            for sample in tqdm(samples):
+                context = sample['input']
+                label = sample['label']
+                answer_choices = sample['answer_choices']
+                model_input = f'''Question: {question}\nContext: {context}\nAnswer choices: {answer_choices}\nAnswer: {prompt}'''
+                input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
+                input_ids = self.tokenizer(input_prompt, return_tensors="pt").input_ids.to('cuda')
+                outputs = self.model.generate(input_ids, max_new_tokens=250, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
+                response_ids = outputs[0]
+                text_output = self.tokenizer.decode(response_ids, skip_special_tokens=True)
+                text_output = text_output.split("GPT4 Correct Assistant:")[1]
+                accuracy += evaluate_CSQA(text_output, label)
+
+        elif self.args.task == 'social_iqa' or self.args.task == 'sports_und' or self.args.task == 'date_under' or self.args.task == 'causal_judg':
+            num_of_samples = len(self.testset['examples'])
+            random.seed(self.args.seed)
+            samples = random.sample(self.testset['examples'], num_of_samples)
+
+            for sample in tqdm(samples):
+                question = sample['input']
+                label = sample['label']
+                answer_choices = sample['answer_choices']
+                model_input = f'''Question: {question}\nAnswer choices: {answer_choices}\nAnswer: {prompt}'''
+                input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
+                input_ids = self.tokenizer(input_prompt, return_tensors="pt").input_ids.to('cuda')
+                outputs = self.model.generate(input_ids, max_new_tokens=250, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
+                response_ids = outputs[0]
+                text_output = self.tokenizer.decode(response_ids, skip_special_tokens=True)
+                text_output = text_output.split("GPT4 Correct Assistant:")[1]
+                accuracy += evaluate_CSQA(text_output, label)
+
 
         accuracy = accuracy/num_of_samples
 
@@ -268,7 +371,7 @@ class InferenceEvalauator:
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='Settings for the Inference')
-    parser.add_argument('--task', default='svamp', type=str, help='Task to be solved. Choose one of: [gsm8k, csqa]')
+    parser.add_argument('--task', default='abs_nar', type=str, help='Task to be solved. Choose one of: [gsm8k, csqa]')
     parser.add_argument('--use_icl_examples', default=False, type=bool, help='whether to use in-context learning examples or not')
     parser.add_argument('--num_icl_examples', default=1, type=int, help='number of in-context learning examples used for evaluation')
     parser.add_argument('--model', default='starling', type=str, help='which model to use')
@@ -277,6 +380,8 @@ if __name__ == "__main__":
     
     logger_name = f"Inference_Eval_{args.task}_output.log"
     logger = setup_logger('progress_logger', logger_name)
+
+    bb_tasks = ['abs_nar', 'causal_judg', 'cause_effect', 'date_under', 'disamb', 'logic_ded3', 'social_iqa', 'sports_und']
 
     if args.model == 'starling':
 
@@ -298,6 +403,25 @@ if __name__ == "__main__":
         tokenizer = AutoTokenizer.from_pretrained("microsoft/Orca-2-7b")
         model = AutoModelForCausalLM.from_pretrained("microsoft/Orca-2-7b", torch_dtype = torch.float16)
 
+    elif args.model == 'mixtral':
+          
+        model_name = "mistralai/Mixtral-8x7B-Instruct-v0.1"
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_compute_dtype=torch.float16
+        )
+        model = AutoModelForCausalLM.from_pretrained(model_name, quantization_config=bnb_config, device_map="cuda:0")
+
+        # model_name = "mistralai/Mixtral-8x7B-Instruct-v0.1"
+        # model = pipeline(
+        #     "text-generation",
+        #     model=model_name,
+        #     model_kwargs={"torch_dtype": torch.float16, "load_in_4bit": True, "bnb_4bit_compute_dtype": torch.float16},
+        # )
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+    
     model = model.to('cuda')
     
     if args.task == 'gsm8k':
@@ -336,6 +460,14 @@ if __name__ == "__main__":
 
         for instance in testset:
             instance['answer_choices'] = format_aqua_options(instance['options'])
+        trainset = testset
+
+    elif args.task in bb_tasks:
+        with open(f'./data/{args.task}.json') as f:
+            testset = json.load(f)
+
+        testset['examples'] = list(map(process_bb_example, testset['examples']))
+        trainset = testset
 
     else:
         raise ValueError("Task not supported")
@@ -355,13 +487,15 @@ if __name__ == "__main__":
 
     initial_population = [
         # "Let's be very precise and accurate in our calculations: Compute the solution with a stepwise approach",
+        # "Let's strive for precision and accuracy in our calculations, and break it down step by step"
         "",
         "This is very important to my career",
-        # "Let's think step by step",
-        # "Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step",
-        # "Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a complete plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer",
-        # "Let's work this out in a step by step way to be sure we have the right answer",
-        # "Take a deep breath and work on this problem step-by-step",
+        "Let's think step by step",
+        "Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step",
+        "Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a complete plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer",
+        "Let's work this out in a step by step way to be sure we have the right answer",
+        "Take a deep breath and work on this problem step-by-step",
+        # "Focus on strategic thinking to swiftly find the accurate solution",
         # "Break this down",
         # "A little bit of arithmetic and a logical approach will help us quickly arrive at the solution to this problem",
         # "Let's combine our numerical command and clear thinking to quickly and accurately decipher the answer",
