@@ -7,7 +7,7 @@ import random
 original_test_dataset = read_jsonl('./data/gsm8k_test.jsonl')
 testset = list(map(add_label, original_test_dataset))
 random.seed(42)
-samples = random.sample(testset, 20)
+samples = random.sample(testset, 50)
 
 # model_name = 'berkeley-nest/Starling-LM-7B-alpha'
 model_name = 'teknium/OpenHermes-2.5-Mistral-7B'
@@ -120,6 +120,11 @@ def prompt_time(prompts):
             # print(f"Total time: {encoding_time + generating_time + decoding_time}")
             # print("")
 
+        avg_encoding_time = sum([times[i]['encoding_time'] for i in times])/len(times)
+        avg_generating_time = sum([times[i]['generating_time'] for i in times])/len(times)
+        avg_decoding_time = sum([times[i]['decoding_time'] for i in times])/len(times)
+        avg_total_time = sum([times[i]['total_time'] for i in times])/len(times)
+
         print(f"Avg times for prompt: {prompt}")
         print("Encoding time: ", sum([times[i]['encoding_time'] for i in times])/len(times))
         print("Generating time: ", sum([times[i]['generating_time'] for i in times])/len(times))
@@ -128,10 +133,30 @@ def prompt_time(prompts):
         print("Correct answers: ", sum([times[i]['eval_result'] for i in times]), "/", len(times))
         print("")
 
-    return times
+    return times, avg_encoding_time, avg_generating_time, avg_decoding_time, avg_total_time
 
-prompt_time(fast_short_prompts)
-prompt_time(slow_short_prompts)
-prompt_time(fast_long_prompts)
-prompt_time(slow_long_prompts)
+_, fast_short_encoding_time, fast_short_generating_time, fast_short_decoding_time, fast_short_total_time = prompt_time(fast_short_prompts)
+_, slow_short_encoding_time, slow_short_generating_time, slow_short_decoding_time, slow_short_total_time = prompt_time(slow_short_prompts)
+_, fast_long_encoding_time, fast_long_generating_time, fast_long_decoding_time, fast_long_total_time = prompt_time(fast_long_prompts)
+_, slow_long_encoding_time, slow_long_generating_time, slow_long_decoding_time, slow_long_total_time = prompt_time(slow_long_prompts)
+
+print(f"Fast & short prompts")
+print(f"Encoding time: {fast_short_encoding_time}")
+print(f"Generating time: {fast_short_generating_time}")
+print(f"Decoding time: {fast_short_decoding_time}")
+
+print(f"Slow & short prompts")
+print(f"Encoding time: {slow_short_encoding_time}")
+print(f"Generating time: {slow_short_generating_time}")
+print(f"Decoding time: {slow_short_decoding_time}")
+
+print(f"Fast & long prompts")
+print(f"Encoding time: {fast_long_encoding_time}")
+print(f"Generating time: {fast_long_generating_time}")
+print(f"Decoding time: {fast_long_decoding_time}")
+
+print(f"Slow & long prompts")
+print(f"Encoding time: {slow_long_encoding_time}")
+print(f"Generating time: {slow_long_generating_time}")
+print(f"Decoding time: {slow_long_decoding_time}")
 
