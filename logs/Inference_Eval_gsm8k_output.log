@@ -1,0 +1,20 @@
+-25-02 11:17:45 | Arguments: Namespace(task='gsm8k', use_icl_examples=False, num_icl_examples=1, model='starling', seed=0)
+Evaluated prompt: Let's think step by step | Accuracy: 0.6163760424564063 | Time: 7686.1854 seconds
+Evaluated prompt: Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step | Accuracy: 0.47536012130401817 | Time: 8506.712 seconds
+Evaluated prompt: Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a plan. Then, let's carry out the plan, calculate the intermediate results (pay attention to calculation and common sense), solve the problem step by step, and show the answer | Accuracy: 0.49962092494313876 | Time: 8452.0896 seconds
+Evaluated prompt: Let's work this out in a step by step way to be sure we have the right answer | Accuracy: 0.6148597422289613 | Time: 7546.507 seconds
+Evaluated prompt: Take a deep breath and work on this problem step-by-step | Accuracy: 0.6004548900682335 | Time: 7757.6741 seconds
+Evaluated prompt: Break this down | Accuracy: 0.6338134950720242 | Time: 7599.8507 seconds
+Evaluated prompt: A little bit of arithmetic and a logical approach will help us quickly arrive at the solution to this problem | Accuracy: 0.6762699014404853 | Time: 7249.6869 seconds
+Evaluated prompt: Embark on a journey to derive the solution to this problem | Accuracy: 0.6178923426838514 | Time: 7732.9226 seconds
+Evaluated prompt: Compute the solution with a calculated, stepwise approach | Accuracy: 0.6095526914329037 | Time: 7527.9332 seconds
+Evaluated prompt: Let's be very precise and accurate in our calculations | Accuracy: 0.6580742987111448 | Time: 7149.9808 seconds
+Evaluated prompt: Our approach will be to methodically work through the problem, ensuring accuracy at each step to derive the correct answer | Accuracy: 0.5595147839272175 | Time: 8165.6796 seconds
+Evaluated prompt: Slow down, let's break this down into manageable steps | Accuracy: 0.5375284306292646 | Time: 8102.2692 seconds
+Evaluated prompt: Let's submerge ourselves in the conundrum, identify vital variables and their numerical values, and establish a plan. As we carry out the plan, let's scrutinize intermediate findings (ensure correct numerical calculations and logical reasoning), tackle the problem progressively, and unveil the answer | Accuracy: 0.5595147839272175 | Time: 8601.5458 seconds
+Evaluated prompt: Divide the topic into smaller, digestible sections and examine it thoroughly, while gradually reducing the speed of discussion | Accuracy: 0.574677786201668 | Time: 8380.9997 seconds
+Evaluated prompt: Focus on strategic thinking to swiftly find the accurate solution | Accuracy: 0.6982562547384382 | Time: 6955.7904 seconds
+Evaluated prompt: Analyze it step by step | Accuracy: 0.6133434420015162 | Time: 8092.0772 seconds
+Evaluated prompt: Let's understand the problem, devise a step-by-step plan, and ensure precise and accurate calculations to find the right answer | Accuracy: 0.574677786201668 | Time: 8512.9489 seconds
+Evaluated prompt: This is very important to my career | Accuracy: 0.5921152388172858 | Time: 8033.2468 seconds
+Evaluated prompt:  | Accuracy: 0.7202426080363912 | Time: 6441.5301 seconds
