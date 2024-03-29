@@ -1,2 +1,0 @@
-29-03 10:09:37 | Arguments: Namespace(task='date_under', use_icl_examples=False, num_icl_examples=1, num_of_samples=35, iterations=20, number_of_mutations=1, seed=0, mutate_population=True, patience=5)
-29-03 10:09:37 | Evaluation of the initial population

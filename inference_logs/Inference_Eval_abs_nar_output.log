@@ -7,3 +7,5 @@
 -27-03 01:06:08 | Evaluated prompt: Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a complete plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer | Accuracy: 0.194 | Time: 7382.892 seconds
 -27-03 02:44:45 | Evaluated prompt: Let's work this out in a step by step way to be sure we have the right answer | Accuracy: 0.371 | Time: 5916.9551 seconds
 -27-03 04:15:33 | Evaluated prompt: Take a deep breath and work on this problem step-by-step | Accuracy: 0.429 | Time: 5448.1984 seconds
+-29-03 11:03:24 | Arguments: Namespace(task='abs_nar', use_icl_examples=False, num_icl_examples=1, model='starling', seed=0)
+-29-03 11:03:24 | Evaluation of the prompt population

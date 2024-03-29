@@ -211,13 +211,60 @@ strategyqa_mutation_styles = [
     "The mutation is a short variant of the prompt aiming to promote a positive thinking and common sense."
 ]
 
+# bb_initial_prompts = [
+#     "Let's think step by step",
+#     "Let's devise a plan and solve the problem step by step",
+#     "Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence)",
+#     "Let's work this out in a step by step way to be sure we have the right answer",
+#     "Take a deep breath and work on this problem step-by-step",
+#     "Analyze this step by step",    
+#     "Start by dissecting the problem into its components, then address each part methodically",
+#     "Let's approach this methodically, breaking it into smaller tasks",
+#     "Dissect the problem carefully, address each part",
+#     "Let's dive in and solve this challenge step by step",
+#     "Approach the problem with a keen eye for detail and methodical precision",
+#     "Embark on a quest for understanding, traversing the problem landscape with curiosity and logic",
+#     "Your attention to detail here would mean everything",
+#     "Please, let's focus and ensure we get the correct answer",
+#     "Ensure that you read the question carefully and understand the problem before attempting to solve it",
+# ]
+
+# bb_inference_prompts = [
+#     "Let's think step by step",
+#     "Let's devise a plan and solve the problem step by step",
+#     "Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence)",
+#     "Let's work this out in a step by step way to be sure we have the right answer",
+#     "Take a deep breath and work on this problem step-by-step",
+#     "Analyze this step by step",    
+#     "Start by dissecting the problem into its components, then address each part methodically",
+#     "Let's approach this methodically, breaking it into smaller tasks",
+#     "Dissect the problem carefully, address each part",
+#     "Let's dive in and solve this challenge step by step",
+#     "Approach the problem with a keen eye for detail and methodical precision",
+#     "Embark on a quest for understanding, traversing the problem landscape with curiosity and logic",
+#     "Your attention to detail here would mean everything",
+#     "Please, let's focus and ensure we get the correct answer",
+#     "Ensure that you read the question carefully and understand the problem before attempting to solve it",
+# ]
+
+# bb_mutation_styles = [
+#     "The mutation is a variant of the input prompt that introduces a structured thought process.",
+#     "The mutation is a variant of the input prompt that provides an alternative viewpoint.",
+#     "The mutation presents a tweaked version of the task, emphasizing logical steps in problem-solving.",
+#     "This variant of the prompt, through mutation, offers a fresh perspective on the problem, focusing on quickness and strategic thinking.",
+#     "Through mutation, the prompt is altered to showcase motivation and logical reasoning.",
+#     "The mutation introduces a revised version of the prompt, aiming to focus on logic and swiftness.",
+#     "The mutation is a revised version of the prompt that emphasizes the importance of logical reasoning and problem-solving strategies.",
+#     "The mutation is a short variant of the prompt aiming to promote a positive thinking and common sense."
+# ]
+
+
 bb_initial_prompts = [
     "Let's think step by step",
     "Let's devise a plan and solve the problem step by step",
     "Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence)",
     "Let's work this out in a step by step way to be sure we have the right answer",
     "Take a deep breath and work on this problem step-by-step",
-    "Analyze this step by step",    
     "Start by dissecting the problem into its components, then address each part methodically",
     "Let's approach this methodically, breaking it into smaller tasks",
     "Dissect the problem carefully, address each part",
@@ -227,6 +274,10 @@ bb_initial_prompts = [
     "Your attention to detail here would mean everything",
     "Please, let's focus and ensure we get the correct answer",
     "Ensure that you read the question carefully and understand the problem before attempting to solve it",
+    "Dive in this problem and find the right answer",
+    "You can do this! Be careful in the calculations"
+    "It is very important to my career",
+    "Let's think slowly and carefully",
 ]
 
 bb_inference_prompts = [
@@ -235,7 +286,6 @@ bb_inference_prompts = [
     "Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence)",
     "Let's work this out in a step by step way to be sure we have the right answer",
     "Take a deep breath and work on this problem step-by-step",
-    "Analyze this step by step",    
     "Start by dissecting the problem into its components, then address each part methodically",
     "Let's approach this methodically, breaking it into smaller tasks",
     "Dissect the problem carefully, address each part",
@@ -248,12 +298,15 @@ bb_inference_prompts = [
 ]
 
 bb_mutation_styles = [
-    "The mutation is a variant of the input prompt that introduces a structured thought process.",
-    "The mutation is a variant of the input prompt that provides an alternative viewpoint.",
-    "The mutation presents a tweaked version of the task, emphasizing logical steps in problem-solving.",
+    "The mutation is a concise variant of the input prompt that introduces a structured thought process.",
+    "The mutation is a short and concise variant of the input prompt that provides an alternative viewpoint.",
+    # "The mutation presents a tweaked version of the task, emphasizing logical steps in problem-solving.",
+    "The mutation is a paraphrased version of the prompt that focuses on quickness and strategic thinking.",
+    "The mutation is a paraphrased version of the prompt that includes all the information of the initial prompt.",
+    "The mutation is a detailed paraphrased version of the prompt which will make it easier to understand.",
     "This variant of the prompt, through mutation, offers a fresh perspective on the problem, focusing on quickness and strategic thinking.",
     "Through mutation, the prompt is altered to showcase motivation and logical reasoning.",
     "The mutation introduces a revised version of the prompt, aiming to focus on logic and swiftness.",
-    "The mutation is a revised version of the prompt that emphasizes the importance of logical reasoning and problem-solving strategies.",
+    # "The mutation is a revised version of the prompt that emphasizes the importance of logical reasoning and problem-solving strategies.",
     "The mutation is a short variant of the prompt aiming to promote a positive thinking and common sense."
 ]
