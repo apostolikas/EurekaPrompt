@@ -310,7 +310,7 @@ class InferenceEvalauator:
             num_of_samples = len(self.testset['examples'])
             random.seed(self.args.seed)
             samples = random.sample(self.testset['examples'], num_of_samples)
-            question = 'Can you claritfy the meaning of the sentence with ambiguous pronouns?'
+            question = 'Can you clarify the meaning of the sentence with ambiguous pronouns?'
 
             for sample in tqdm(samples):
                 context = sample['input']
@@ -378,7 +378,7 @@ if __name__ == "__main__":
     parser.add_argument('--seed', default=0, type=int, help='type of mutation')
     args = parser.parse_args()
     
-    logger_name = f"Inference_Eval_{args.task}_output.log"
+    logger_name = f"./inference_logs/Inference_Eval_{args.task}_output.log"
     logger = setup_logger('progress_logger', logger_name)
 
     bb_tasks = ['abs_nar', 'causal_judg', 'cause_effect', 'date_under', 'disamb', 'logic_ded3', 'social_iqa', 'sports_und']
@@ -472,34 +472,18 @@ if __name__ == "__main__":
     else:
         raise ValueError("Task not supported")
 
-    # if args.task == 'gsm8k':
-    #     initial_population = gsm8k_initial_prompts
-    # elif args.task == 'svamp':
-    #     initial_population = svamp_initial_prompts
-    # elif args.task == 'aqua':
-    #     initial_population = aqua_initial_prompts
-    # elif args.task == 'strategyqa':
-    #     initial_population = strategyqa_initial_prompts
-    # elif args.task == 'csqa':
-    #     initial_population = csqa_initial_prompts
-    # else:
-    #     raise ValueError("Task not supported")
-
     initial_population = [
         # "Let's be very precise and accurate in our calculations: Compute the solution with a stepwise approach",
         # "Let's strive for precision and accuracy in our calculations, and break it down step by step"
-        "",
-        "This is very important to my career",
-        "Let's think step by step",
-        "Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step",
-        "Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a complete plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer",
-        "Let's work this out in a step by step way to be sure we have the right answer",
-        "Take a deep breath and work on this problem step-by-step",
+        "Embark on a quest for understanding by identifying the key components of the problem, analyzing their relationships, and devising a step-by-step plan to address each aspect, all while working together with others"
+        # "",
+        # "This is very important to my career",
+        # "Let's think step by step",
+        # "Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step",
+        # "Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a complete plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer",
+        # "Let's work this out in a step by step way to be sure we have the right answer",
+        # "Take a deep breath and work on this problem step-by-step",
         # "Focus on strategic thinking to swiftly find the accurate solution",
-        # "Break this down",
-        # "A little bit of arithmetic and a logical approach will help us quickly arrive at the solution to this problem",
-        # "Let's combine our numerical command and clear thinking to quickly and accurately decipher the answer",
-        # "Let's recognize the fundamental aspects of the problem, pinpoint crucial variables and their values, and establish a methodical plan. Following that, let's carry out the plan, keep track of intermediate results (maintaining precision and logical coherence), and systematically tackle the problem step by step, ultimately disclosing the solution and illustrating the answer",
     ]
 
     inference_engine = InferenceEvalauator(args, testset, model, tokenizer, trainset, initial_population)
