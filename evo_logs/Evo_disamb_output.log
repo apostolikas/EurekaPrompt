@@ -1,0 +1,21 @@
+29-03 10:08:05 | Arguments: Namespace(task='disamb', use_icl_examples=False, num_icl_examples=1, num_of_samples=35, iterations=20, number_of_mutations=1, seed=0, mutate_population=True, patience=5)
+29-03 10:08:05 | Evaluation of the initial population
+29-03 10:53:59 | Population: Let's think step by step with fitness 0.5142857142857142
+29-03 10:53:59 | Population: Let's devise a plan and solve the problem step by step with fitness 0.37142857142857144
+29-03 10:53:59 | Population: Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence) with fitness 0.34285714285714286
+29-03 10:53:59 | Population: Let's work this out in a step by step way to be sure we have the right answer with fitness 0.05714285714285714
+29-03 10:53:59 | Population: Take a deep breath and work on this problem step-by-step with fitness 0.6
+29-03 10:53:59 | Population: Start by dissecting the problem into its components, then address each part methodically with fitness 0.42857142857142855
+29-03 10:53:59 | Population: Let's approach this methodically, breaking it into smaller tasks with fitness 0.37142857142857144
+29-03 10:53:59 | Population: Dissect the problem carefully, address each part with fitness 0.37142857142857144
+29-03 10:53:59 | Population: Let's dive in and solve this challenge step by step with fitness 0.5142857142857142
+29-03 10:53:59 | Population: Approach the problem with a keen eye for detail and methodical precision with fitness 0.45714285714285713
+29-03 10:53:59 | Population: Embark on a quest for understanding, traversing the problem landscape with curiosity and logic with fitness 0.5142857142857142
+29-03 10:53:59 | Population: Your attention to detail here would mean everything with fitness 0.4857142857142857
+29-03 10:53:59 | Population: Please, let's focus and ensure we get the correct answer with fitness 0.6857142857142857
+29-03 10:53:59 | Population: Ensure that you read the question carefully and understand the problem before attempting to solve it with fitness 0.42857142857142855
+29-03 10:53:59 | Population: Dive in this problem and find the right answer with fitness 0.5714285714285714
+29-03 10:53:59 | Population: You can do this! Be careful in the calculationsIt is very important to my career with fitness 0.5428571428571428
+29-03 10:53:59 | Population: Let's think slowly and carefully with fitness 0.42857142857142855
+29-03 10:53:59 | Genetic Algorithms starts
+29-03 10:57:29 | Generation 1 Crossover: "Let's first prepare relevant information and make a plan, then let's work this out in a step by step way to be sure we have the right answer and maintain commonsense and logical coherence" | Fitness: 0.4857142857142857
