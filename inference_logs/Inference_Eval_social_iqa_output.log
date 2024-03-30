@@ -1,9 +1,0 @@
--27-03 10:37:39 | Arguments: Namespace(task='social_iqa', use_icl_examples=False, num_icl_examples=1, model='starling', seed=0)
--27-03 10:37:39 | Evaluation of the prompt population
--27-03 10:50:28 | Evaluated prompt:  | Accuracy: 0.7773797338792221 | Time: 769.4392 seconds
--27-03 12:10:49 | Evaluated prompt: This is very important to my career | Accuracy: 0.6182190378710338 | Time: 4821.0016 seconds
--27-03 14:02:52 | Evaluated prompt: Let's think step by step | Accuracy: 0.45752302968270214 | Time: 6722.3591 seconds
--27-03 17:12:41 | Evaluated prompt: Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step | Accuracy: 0.3587512794268168 | Time: 11389.384 seconds
--27-03 20:00:22 | Evaluated prompt: Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a complete plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer | Accuracy: 0.31525076765609006 | Time: 10061.196 seconds
--27-03 23:12:03 | Evaluated prompt: Let's work this out in a step by step way to be sure we have the right answer | Accuracy: 0.3239508700102354 | Time: 11501.0922 seconds
--28-03 02:24:33 | Evaluated prompt: Take a deep breath and work on this problem step-by-step | Accuracy: 0.3541453428863869 | Time: 11549.9304 seconds

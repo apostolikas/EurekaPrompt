@@ -1,0 +1,8 @@
+-30-03 13:22:13 | Arguments: Namespace(task='causal_judg', use_icl_examples=False, num_icl_examples=1, model='starling', seed=0)
+-30-03 13:22:13 | Evaluation of the prompt population
+-30-03 13:51:01 | Arguments: Namespace(task='causal_judg', use_icl_examples=False, num_icl_examples=1, model='starling', seed=0)
+-30-03 13:51:01 | Evaluation of the prompt population
+-30-03 14:15:19 | Evaluated prompt: To swiftly locate the accurate response, let's inhale deeply and tackle this methodically | Accuracy: 0.0 | Time: 1458.377 seconds
+-30-03 14:30:05 | Arguments: Namespace(task='causal_judg', use_icl_examples=False, num_icl_examples=1, model='starling', seed=0)
+-30-03 14:30:05 | Evaluation of the prompt population
+-30-03 14:54:09 | Evaluated prompt: To swiftly locate the accurate response, let's inhale deeply and tackle this methodically | Accuracy: 0.0 | Time: 1444.3977 seconds
