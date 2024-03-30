@@ -2,5 +2,6 @@
 *.txt
 /jobs
 __pycache__/
-*.log
 /data
+/evo_logs
+/inference_logs
