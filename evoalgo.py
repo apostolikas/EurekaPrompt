@@ -238,8 +238,20 @@ class GenPrompt:
 
     def select_parents(self, fitness_dict):
         random.seed() # delete
-        return random.sample(list(fitness_dict.keys()), 2)
+        # return random.sample(list(fitness_dict.keys()), 2)
+        prompts = list(fitness_dict.keys())
+        scores = list(fitness_dict.values())
+        # Normalize the scores to create probabilities
+        total_score = sum(scores)
+        probabilities = [score / total_score for score in scores]
+        # Use random.sample() to select unique prompts based on the probabilities
+        population = list(zip(prompts, probabilities))
+        samples = random.sample(population, 2)
+        # Extract the sampled prompts
+        sampled_prompts = [prompt for prompt, _ in samples]
 
+        return sampled_prompts
+    
     def crossover(self, parents):
 
         parent_prompt1 = parents[0]
@@ -326,7 +338,7 @@ class GenPrompt:
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='Settings for the Evolutionary Algorithms')
-    parser.add_argument('--task', default='abs_nar', type=str, help='Task to be solved. Choose one of: [gsm8k, csqa, aqua, svamp, strategyqa]')
+    parser.add_argument('--task', default='date_under', type=str, help='Task to be solved. Choose one of: [gsm8k, csqa, aqua, svamp, strategyqa]')
     parser.add_argument('--use_icl_examples', default=False, type=bool, help='whether to use in-context learning examples or not')
     parser.add_argument('--num_icl_examples', default=1, type=int, help='number of in-context learning examples used for evaluation')
     parser.add_argument('--num_of_samples', default=35, type=int, help='number of samples used for evaluation')
@@ -600,7 +612,7 @@ if __name__ == "__main__":
 
             logger.info(f'Generation {iter}: Best prompt: "{best_prompt}" | Fitness {best_fitness}')
 
-            if best_prompt in initial_fitness_dict:
+            if best_prompt in initial_fitness_dict.keys():
                 continue
             else:
                 if stagnation_count >= patience:
