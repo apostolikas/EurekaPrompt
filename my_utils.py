@@ -200,7 +200,7 @@ def contstruct_mutation_prompt(fitness_dict):
     top_5 = sorted_texts[-5:]
     prompt = "I have some texts along with their corresponding scores. The texts are arranged in ascending order based on their score, where higher scores indicate better quality.\n"
     prompt += "".join([f"text: {text}\nscore: {score}\n" for text, score in top_5])
-    prompt += "Write some parts from all the texts above that you think are important for solving the problem. Write the parts within brackets."
+    prompt += "Write some words from all the texts above that you think are important for solving the problem. Write the words within brackets."
     return prompt
 
 def setup_logger(name, log_file, level=logging.INFO):
