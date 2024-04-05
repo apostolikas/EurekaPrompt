@@ -5,3 +5,4 @@ __pycache__/
 /data
 /evo_logs
 /inference_logs
+*.png
