@@ -1,8 +1,10 @@
--30-03 13:22:13 | Arguments: Namespace(task='causal_judg', use_icl_examples=False, num_icl_examples=1, model='starling', seed=0)
--30-03 13:22:13 | Evaluation of the prompt population
--30-03 13:51:01 | Arguments: Namespace(task='causal_judg', use_icl_examples=False, num_icl_examples=1, model='starling', seed=0)
--30-03 13:51:01 | Evaluation of the prompt population
--30-03 14:15:19 | Evaluated prompt: To swiftly locate the accurate response, let's inhale deeply and tackle this methodically | Accuracy: 0.0 | Time: 1458.377 seconds
--30-03 14:30:05 | Arguments: Namespace(task='causal_judg', use_icl_examples=False, num_icl_examples=1, model='starling', seed=0)
--30-03 14:30:05 | Evaluation of the prompt population
--30-03 14:54:09 | Evaluated prompt: To swiftly locate the accurate response, let's inhale deeply and tackle this methodically | Accuracy: 0.0 | Time: 1444.3977 seconds
+-31-03 16:53:20 | Arguments: Namespace(task='causal_judg', use_icl_examples=False, num_icl_examples=1, model='starling', seed=0)
+-31-03 16:53:20 | Evaluation of the prompt population
+-31-03 16:56:48 | Evaluated prompt:  | Accuracy: 0.5947368421052631 | Time: 208.712 seconds
+-31-03 17:05:41 | Evaluated prompt: This is very important to my career | Accuracy: 0.5421052631578948 | Time: 532.3238 seconds
+-31-03 17:15:46 | Evaluated prompt: Let's think step by step | Accuracy: 0.49473684210526314 | Time: 605.2188 seconds
+-31-03 17:30:37 | Evaluated prompt: Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step | Accuracy: 0.45789473684210524 | Time: 891.1948 seconds
+-31-03 17:43:55 | Evaluated prompt: Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a complete plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer | Accuracy: 0.5 | Time: 797.8623 seconds
+-31-03 17:59:22 | Evaluated prompt: Let's work this out in a step by step way to be sure we have the right answer | Accuracy: 0.3684210526315789 | Time: 927.0433 seconds
+-31-03 18:15:25 | Evaluated prompt: Take a deep breath and work on this problem step-by-step | Accuracy: 0.41578947368421054 | Time: 963.2444 seconds
+-30-03 18:45:16 | Evaluated prompt: To swiftly locate the accurate response, let's inhale deeply and tackle this methodically | Accuracy: 0.5157894736842106 | Time: 646.802 seconds

@@ -1,0 +1,9 @@
+-27-03 10:37:06 | Arguments: Namespace(task='logic_ded3', use_icl_examples=False, num_icl_examples=1, model='starling', seed=0)
+-27-03 10:37:06 | Evaluation of the prompt population
+-27-03 10:39:35 | Evaluated prompt:  | Accuracy: 0.67 | Time: 149.1643 seconds
+-27-03 10:50:14 | Evaluated prompt: This is very important to my career | Accuracy: 0.33666666666666667 | Time: 638.6269 seconds
+-27-03 11:01:45 | Evaluated prompt: Let's think step by step | Accuracy: 0.49333333333333335 | Time: 691.4317 seconds
+-27-03 11:26:39 | Evaluated prompt: Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step | Accuracy: 0.27666666666666667 | Time: 1493.4008 seconds
+-27-03 11:45:54 | Evaluated prompt: Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a complete plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer | Accuracy: 0.21333333333333335 | Time: 1155.1674 seconds
+-27-03 12:06:51 | Evaluated prompt: Let's work this out in a step by step way to be sure we have the right answer | Accuracy: 0.13333333333333333 | Time: 1257.5277 seconds
+-27-03 12:21:59 | Evaluated prompt: Take a deep breath and work on this problem step-by-step | Accuracy: 0.2833333333333333 | Time: 907.5633 seconds

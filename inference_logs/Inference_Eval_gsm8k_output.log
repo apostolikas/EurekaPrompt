@@ -1,0 +1,10 @@
+-25-02 11:17:45 | Arguments: Namespace(task='gsm8k', use_icl_examples=False, num_icl_examples=1, model='starling', seed=0)
+Evaluated prompt:  | Accuracy: 0.7202426080363912 | Time: 6441.5301 seconds
+Evaluated prompt: This is very important to my career | Accuracy: 0.5921152388172858 | Time: 8033.2468 seconds
+Evaluated prompt: Let's think step by step | Accuracy: 0.6163760424564063 | Time: 7686.1854 seconds
+Evaluated prompt: Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step | Accuracy: 0.47536012130401817 | Time: 8506.712 seconds
+Evaluated prompt: Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a plan. Then, let's carry out the plan, calculate the intermediate results (pay attention to calculation and common sense), solve the problem step by step, and show the answer | Accuracy: 0.49962092494313876 | Time: 8452.0896 seconds
+Evaluated prompt: Let's work this out in a step by step way to be sure we have the right answer | Accuracy: 0.6148597422289613 | Time: 7546.507 seconds
+Evaluated prompt: Take a deep breath and work on this problem step-by-step | Accuracy: 0.6004548900682335 | Time: 7757.6741 seconds
+Evaluated prompt: Focus on strategic thinking to swiftly find the accurate solution | Accuracy: 0.6982562547384382 | Time: 6955.7904 seconds
+Evaluated prompt: This is very important to my career | Accuracy: 0.5921152388172858 | Time: 8033.2468 seconds

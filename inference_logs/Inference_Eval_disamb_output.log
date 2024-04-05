@@ -1,0 +1,11 @@
+-27-03 08:34:30 | Arguments: Namespace(task='disamb', use_icl_examples=False, num_icl_examples=1, model='starling', seed=0)
+-27-03 08:34:30 | Evaluation of the prompt population
+-27-03 08:35:38 | Evaluated prompt:  | Accuracy: 0.6124031007751938 | Time: 67.9579 seconds
+-27-03 08:48:10 | Evaluated prompt: This is very important to my career | Accuracy: 0.5968992248062015 | Time: 751.6204 seconds
+-27-03 09:06:44 | Evaluated prompt: Let's think step by step | Accuracy: 0.5193798449612403 | Time: 1113.7163 seconds
+-27-03 09:28:21 | Evaluated prompt: Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step | Accuracy: 0.5658914728682171 | Time: 1296.8532 seconds
+-27-03 09:48:56 | Evaluated prompt: Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a complete plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer | Accuracy: 0.45348837209302323 | Time: 1235.6815 seconds
+-27-03 10:11:43 | Evaluated prompt: Let's work this out in a step by step way to be sure we have the right answer | Accuracy: 0.08914728682170543 | Time: 1367.0935 seconds
+-27-03 10:29:12 | Evaluated prompt: Take a deep breath and work on this problem step-by-step | Accuracy: 0.47674418604651164 | Time: 1048.5044 seconds
+-29-03 16:03:44 | Evaluated prompt: Explore the challenge methodically and logically | Accuracy: 0.5465116279069767 | Time: 1387.1166 seconds
+-01-04 12:31:47 | Evaluated prompt: Inhale clarity, take a deep breath, and let's think step by step to tackle this problem, exhaling confusion as we answer with commonsense and logical coherence | Accuracy: 0.5271317829457365 | Time: 1163.1967 seconds

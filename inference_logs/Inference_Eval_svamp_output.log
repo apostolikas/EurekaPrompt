@@ -1,0 +1,10 @@
+-13-03 10:46:02 | Arguments: Namespace(task='svamp', use_icl_examples=False, num_icl_examples=1, model='starling', seed=0)
+-13-03 10:46:02 | Evaluation of the prompt population
+-17-03 12:43:24 | Evaluated prompt:  | Accuracy: 0.254 | Time: 3159.0321 seconds
+-17-03 13:53:23 | Evaluated prompt: This is very important to my career | Accuracy: 0.593 | Time: 4199.0336 seconds
+-13-03 11:58:11 | Evaluated prompt: Let's think step by step | Accuracy: 0.488 | Time: 4328.6347 seconds
+-13-03 13:39:35 | Evaluated prompt: Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step | Accuracy: 0.377 | Time: 6083.9896 seconds
+-13-03 15:12:11 | Evaluated prompt: Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a complete plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer | Accuracy: 0.548 | Time: 5556.0887 seconds
+-13-03 16:27:40 | Evaluated prompt: Let's work this out in a step by step way to be sure we have the right answer | Accuracy: 0.53 | Time: 4529.1925 seconds
+-13-03 17:47:39 | Evaluated prompt: Take a deep breath and work on this problem step-by-step | Accuracy: 0.464 | Time: 4798.5538 seconds
+-16-03 19:21:40 | Evaluated prompt: Let's be very precise and accurate in our calculations: Compute the solution with a stepwise approach | Accuracy: 0.658 | Time: 5018.6462 seconds

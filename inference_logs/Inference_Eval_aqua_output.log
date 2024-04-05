@@ -1,0 +1,8 @@
+-24-03 14:35:01 | Arguments: Namespace(task='aqua', use_icl_examples=False, num_icl_examples=1, model='starling', seed=0)
+-24-03 14:35:01 | Evaluation of the prompt population
+-24-03 15:02:56 | Evaluated prompt: Let's think step by step | Accuracy: 0.3031496062992126 | Time: 1675.2158 seconds
+-24-03 15:33:59 | Evaluated prompt: Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step | Accuracy: 0.3031496062992126 | Time: 1862.7016 seconds
+-24-03 16:05:19 | Evaluated prompt: Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a complete plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer | Accuracy: 0.29133858267716534 | Time: 1880.8054 seconds
+-24-03 16:34:15 | Evaluated prompt: Let's work this out in a step by step way to be sure we have the right answer | Accuracy: 0.33070866141732286 | Time: 1736.0155 seconds
+-24-03 17:03:51 | Evaluated prompt: Take a deep breath and work on this problem step-by-step | Accuracy: 0.3188976377952756 | Time: 1775.2604 seconds
+-24-03 17:31:19 | Evaluated prompt: Focus on strategic thinking to swiftly find the accurate solution | Accuracy: 0.33070866141732286 | Time: 1648.3424 seconds

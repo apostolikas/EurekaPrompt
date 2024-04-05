@@ -1,0 +1,10 @@
+-01-04 22:02:14 | Arguments: Namespace(task='sports_und', use_icl_examples=False, num_icl_examples=1, model='starling', seed=0)
+-01-04 22:02:14 | Evaluation of the prompt population
+-01-04 22:09:32 | Evaluated prompt:  | Accuracy: 0.68 | Time: 438.3528 seconds
+-01-04 22:51:22 | Evaluated prompt: This is very important to my career | Accuracy: 0.51 | Time: 2510.1231 seconds
+-01-04 23:39:18 | Evaluated prompt: Let's think step by step | Accuracy: 0.4 | Time: 2875.9103 seconds
+-02-04 01:01:46 | Evaluated prompt: Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step | Accuracy: 0.322 | Time: 4948.0996 seconds
+-02-04 02:09:54 | Evaluated prompt: Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a complete plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer | Accuracy: 0.37 | Time: 4087.594 seconds
+-02-04 03:16:10 | Evaluated prompt: Let's work this out in a step by step way to be sure we have the right answer | Accuracy: 0.327 | Time: 3976.2644 seconds
+-01-04 18:46:43 | Evaluated prompt: Seek the correct answer | Accuracy: 0.118 | Time: 7662.9477 seconds
+-04-04 13:46:29 | Evaluated prompt: Embark on a journey to uncover knowledge, igniting curiosity and logic, while maintaining a positive mindset and focusing on understanding the problem, devising a strategy with organized data to dissect challenges into smaller parts, navigating the landscape methodically, and achieving both favorable outcomes and exceptional results, all while being deliberate in our approach and prioritizing strategic thinking | Accuracy: 0.451 | Time: 3640.9567 seconds
