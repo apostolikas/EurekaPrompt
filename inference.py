@@ -303,28 +303,7 @@ class InferenceEvalauator:
                     result = evaluate_CSQA(text_output, label)
                     f.write(f"Question: {i} | Result: {result}\n")
                     accuracy += result
-
-            elif self.args.task == 'cause_effect':
-                file_name = f"./inference_logs/{self.args.task}_answers.txt"
-                num_of_samples = len(self.testset['examples'])
-                random.seed(self.args.seed)
-                samples = random.sample(self.testset['examples'], num_of_samples)
-                question = self.testset['task_prefix']
-
-                for i, sample in enumerate(tqdm(samples)):
-                    label = sample['label']
-                    answer_choices = sample['answer_choices']
-                    model_input = f'''Question: {question}\nAnswer choices: {answer_choices}\nAnswer: {prompt}'''
-                    input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
-                    input_ids = self.tokenizer(input_prompt, return_tensors="pt").input_ids.to('cuda')
-                    outputs = self.model.generate(input_ids, max_new_tokens=250, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
-                    response_ids = outputs[0]
-                    text_output = self.tokenizer.decode(response_ids, skip_special_tokens=True)
-                    text_output = text_output.split("GPT4 Correct Assistant:")[1]
-                    result = evaluate_CSQA(text_output, label)
-                    f.write(f"Question: {i} | Result: {result}")
-                    accuracy += result
-
+                    
             elif self.args.task == 'disamb':
                 file_name = f"./inference_logs/{self.args.task}_answers.txt"
                 num_of_samples = len(self.testset['examples'])
@@ -408,7 +387,7 @@ if __name__ == "__main__":
     logger_name = f"./inference_logs/Inference_Eval_{args.task}_output.log"
     logger = setup_logger('progress_logger', logger_name)
 
-    bb_tasks = ['abs_nar', 'causal_judg', 'cause_effect', 'date_under', 'disamb', 'logic_ded3', 'social_iqa', 'sports_und']
+    bb_tasks = ['abs_nar', 'causal_judg', 'date_under', 'disamb', 'logic_ded3', 'social_iqa', 'sports_und']
 
     if args.model == 'starling':
         tokenizer = AutoTokenizer.from_pretrained("berkeley-nest/Starling-LM-7B-alpha")

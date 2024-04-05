@@ -168,22 +168,6 @@ class GenPrompt:
                 text_output = text_output.split('GPT4 Correct Assistant:')[1]
                 fitness += evaluate_CSQA(text_output, label)
 
-        elif self.args.task == 'cause_effect':
-
-            random.seed(self.args.seed)
-            samples = random.sample(self.testset['examples'], self.args.num_of_samples)
-            question = self.testset['task_prefix']
-
-            for sample in tqdm(samples):
-                label = sample['label']
-                answer_choices = sample['answer_choices']
-                model_input = f'''Question: {question}\nAnswer choices: {answer_choices}\nAnswer: {prompt}'''
-                input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
-                text_output = self.model.get_response(input_prompt)
-                text_output = text_output.split('GPT4 Correct Assistant:')[1]
-                fitness += evaluate_CSQA(text_output, label)
-
-
         elif self.args.task == 'disamb':
 
             random.seed(self.args.seed)
@@ -338,7 +322,7 @@ class GenPrompt:
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='Settings for the Evolutionary Algorithms')
-    parser.add_argument('--task', default='date_under', type=str, help='Task to be solved. Choose one of: [gsm8k, csqa, aqua, svamp, strategyqa]')
+    parser.add_argument('--task', default='disamb', type=str, help='Task to be solved. Choose one of: [gsm8k, csqa, aqua, svamp, strategyqa]')
     parser.add_argument('--use_icl_examples', default=False, type=bool, help='whether to use in-context learning examples or not')
     parser.add_argument('--num_icl_examples', default=1, type=int, help='number of in-context learning examples used for evaluation')
     parser.add_argument('--num_of_samples', default=35, type=int, help='number of samples used for evaluation')
@@ -352,7 +336,7 @@ if __name__ == "__main__":
     logger_name = f"./evo_logs/Evo_{args.task}_output.log"
     logger = setup_logger('progress_logger', logger_name)
 
-    bb_tasks = ['abs_nar', 'causal_judg', 'cause_effect', 'date_under', 'disamb', 'logic_ded3', 'social_iqa', 'sports_und']
+    bb_tasks = ['abs_nar', 'causal_judg', 'date_under', 'disamb', 'logic_ded3', 'social_iqa', 'sports_und']
 
     tokenizer = AutoTokenizer.from_pretrained("berkeley-nest/Starling-LM-7B-alpha")
     model = AutoModelForCausalLM.from_pretrained("berkeley-nest/Starling-LM-7B-alpha", torch_dtype = torch.float16)
@@ -441,7 +425,7 @@ if __name__ == "__main__":
                     "Ensure that you read the question carefully and understand the problem before attempting to solve it":  0.5714285714285714,
                     "Dive in this problem and find the right answer": 0.6857142857142857,
                     "You can do this! Be careful in the calculations": 0.5142857142857142,
-                    "It is very important to my career": 0.7714285714285715,
+                    # "It is very important to my career": 0.7714285714285715,
                     "Let's think slowly and carefully": 0.42857142857142855,
                 }
 
@@ -463,13 +447,10 @@ if __name__ == "__main__":
                     "Ensure that you read the question carefully and understand the problem before attempting to solve it": 0.5142857142857142,
                     "Dive in this problem and find the right answer": 0.6571428571428571,
                     "You can do this! Be careful in the calculations": 0.5714285714285714,
-                    "It is very important to my career": 0.4857142857142857,
+                    # "It is very important to my career": 0.4857142857142857,
                     "Let's think slowly and carefully": 0.5428571428571428,
                 }
 
-            elif args.task == 'cause_effect':
-                fitness_dict = prompt_engine.evaluate_population(population)
-                
             elif args.task == 'date_under':
                 fitness_dict = {
                     "Let's think step by step": 0.6571428571428571,
@@ -488,7 +469,7 @@ if __name__ == "__main__":
                     "Ensure that you read the question carefully and understand the problem before attempting to solve it": 0.4857142857142857,
                     "Dive in this problem and find the right answer": 0.6285714285714286,
                     "You can do this! Be careful in the calculations": 0.5428571428571428,
-                    "It is very important to my career": 0.6285714285714286,
+                    # "It is very important to my career": 0.6285714285714286,
                     "Let's think slowly and carefully": 0.6,
                 }
                 
@@ -510,7 +491,7 @@ if __name__ == "__main__":
                     "Ensure that you read the question carefully and understand the problem before attempting to solve it": 0.42857142857142855,
                     "Dive in this problem and find the right answer": 0.5714285714285714,
                     "You can do this! Be careful in the calculations": 0.37142857142857144,
-                    "It is very important to my career": 0.5428571428571428,
+                    # "It is very important to my career": 0.5428571428571428,
                     "Let's think slowly and carefully": 0.42857142857142855,
                 }
                 
@@ -522,7 +503,6 @@ if __name__ == "__main__":
                     "Let's work this out in a step by step way to be sure we have the right answer": 0.11428571428571428,
                     "Take a deep breath and work on this problem step-by-step": 0.2571428571428571,
                     "Start by dissecting the problem into its components, then address each part methodically": 0.2857142857142857,
-                    "Let's approach this methodically, breaking it into smaller tasks": 0.2857142857142857,
                     "Dissect the problem carefully, address each part": 0.2571428571428571,
                     "Let's dive in and solve this challenge step by step": 0.2857142857142857,
                     "Approach the problem with a keen eye for detail and methodical precision": 0.2857142857142857,
@@ -530,51 +510,56 @@ if __name__ == "__main__":
                     "Your attention to detail here would mean everything": 0.3142857142857143,
                     "Please, let's focus and ensure we get the correct answer": 0.2857142857142857,
                     "Ensure that you read the question carefully and understand the problem before attempting to solve it": 0.2857142857142857,
+                    "Dive in this problem and find the right answer": 0.2857142857142857,
+                    "You can do this! Be careful in the calculations": 0.2857142857142857,
+                    # "It is very important to my career": 0.2857142857142857,
+                    "Let's think slowly and carefully": 0.2857142857142857,
                 }
 
-            else:
-                fitness_dict = prompt_engine.evaluate_population(population)
-
-            # elif args.task == 'social_iqa':
-            #     fitness_dict = {
-            #         "Let's think step by step": 0.5142857142857142,
-            #         "Let's devise a plan and solve the problem step by step": 0.3142857142857143,
-            #         "Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence)": 0.4,
-            #         "Let's work this out in a step by step way to be sure we have the right answer": 0.4,
-            #         "Take a deep breath and work on this problem step-by-step": 0.4857142857142857,
-            #         # "Analyze this step by step": 0.2857142857142857,
-            #         "Start by dissecting the problem into its components, then address each part methodically": 0.4,
-            #         "Let's approach this methodically, breaking it into smaller tasks": 0.34285714285714286,
-            #         "Dissect the problem carefully, address each part": 0.4857142857142857,
-            #         "Let's dive in and solve this challenge step by step": 0.42857142857142855,
-            #         "Approach the problem with a keen eye for detail and methodical precision": 0.42857142857142855,
-            #         "Embark on a quest for understanding, traversing the problem landscape with curiosity and logic": 0.4857142857142857,
-            #         "Your attention to detail here would mean everything": 0.42857142857142855,
-            #         "Please, let's focus and ensure we get the correct answer": 0.4,
-            #         "Ensure that you read the question carefully and understand the problem before attempting to solve it": 0.4,
-            #     }
+            elif args.task == 'social_iqa':
+                fitness_dict = {
+                    "Let's think step by step": 0.5142857142857142,
+                    "Let's devise a plan and solve the problem step by step": 0.3142857142857143,
+                    "Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence)": 0.4,
+                    "Let's work this out in a step by step way to be sure we have the right answer": 0.4,
+                    "Take a deep breath and work on this problem step-by-step": 0.4857142857142857,
+                    "Start by dissecting the problem into its components, then address each part methodically": 0.4,
+                    "Dissect the problem carefully, address each part": 0.4857142857142857,
+                    "Let's dive in and solve this challenge step by step": 0.42857142857142855,
+                    "Approach the problem with a keen eye for detail and methodical precision": 0.42857142857142855,
+                    "Embark on a quest for understanding, traversing the problem landscape with curiosity and logic": 0.4857142857142857,
+                    "Your attention to detail here would mean everything": 0.42857142857142855,
+                    "Please, let's focus and ensure we get the correct answer": 0.4,
+                    "Ensure that you read the question carefully and understand the problem before attempting to solve it": 0.4,
+                    "Dive in this problem and find the right answer": 0.5142857142857142,
+                    "You can do this! Be careful in the calculations": 0.45714285714285713,
+                    # "It is very important to my career": 0.6285714285714286,
+                    "Let's think slowly and carefully": 0.45714285714285713,
+                }
                 
 
-            # elif args.task == 'sports_und':
-            #     fitness_dict = {
-            #         "Let's think step by step": 0.2571428571428571,
-            #         "Let's devise a plan and solve the problem step by step": 0.34285714285714286,
-            #         "Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence)": 0.2571428571428571,
-            #         "Let's work this out in a step by step way to be sure we have the right answer": 0.3142857142857143,
-            #         "Take a deep breath and work on this problem step-by-step": 0.37142857142857144,
-            #         # "Analyze this step by step": 0.17142857142857143,
-            #         "Start by dissecting the problem into its components, then address each part methodically": 0.2857142857142857,
-            #         "Let's approach this methodically, breaking it into smaller tasks": 0.34285714285714286,
-            #         "Dissect the problem carefully, address each part": 0.2857142857142857,
-            #         "Let's dive in and solve this challenge step by step": 0.2857142857142857,
-            #         "Approach the problem with a keen eye for detail and methodical precision": 0.3142857142857143,
-            #         "Embark on a quest for understanding, traversing the problem landscape with curiosity and logic": 0.37142857142857144,
-            #         "Your attention to detail here would mean everything": 0.34285714285714286,
-            #         "Please, let's focus and ensure we get the correct answer": 0.34285714285714286,
-            #         "Ensure that you read the question carefully and understand the problem before attempting to solve it": 0.3142857142857143,
-            #     }
-            # else:
-            #     raise ValueError("Task not supported")
+            elif args.task == 'sports_und':
+                fitness_dict = {
+                    "Let's think step by step": 0.2571428571428571,
+                    "Let's devise a plan and solve the problem step by step": 0.34285714285714286,
+                    "Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence)": 0.2571428571428571,
+                    "Let's work this out in a step by step way to be sure we have the right answer": 0.3142857142857143,
+                    "Take a deep breath and work on this problem step-by-step": 0.37142857142857144,
+                    "Start by dissecting the problem into its components, then address each part methodically": 0.2857142857142857,
+                    "Dissect the problem carefully, address each part": 0.2857142857142857,
+                    "Let's dive in and solve this challenge step by step": 0.2857142857142857,
+                    "Approach the problem with a keen eye for detail and methodical precision": 0.3142857142857143,
+                    "Embark on a quest for understanding, traversing the problem landscape with curiosity and logic": 0.37142857142857144,
+                    "Your attention to detail here would mean everything": 0.34285714285714286,
+                    "Please, let's focus and ensure we get the correct answer": 0.34285714285714286,
+                    "Ensure that you read the question carefully and understand the problem before attempting to solve it": 0.3142857142857143,
+                    "Dive in this problem and find the right answer": 0.37142857142857144,
+                    "You can do this! Be careful in the calculations": 0.37142857142857144,
+                    # "It is very important to my career": 0.5142857142857142,
+                    "Let's think slowly and carefully": 0.2857142857142857,
+                }
+            else:
+                raise ValueError("Task not supported")
             initial_fitness_dict = fitness_dict
 
             for prompt in population:
@@ -612,10 +597,11 @@ if __name__ == "__main__":
 
             logger.info(f'Generation {iter}: Best prompt: "{best_prompt}" | Fitness {best_fitness}')
 
-            if best_prompt in initial_fitness_dict.keys():
-                continue
-            else:
-                if stagnation_count >= patience:
+            if stagnation_count >= patience:
+                if best_prompt in initial_fitness_dict.keys():
+                    continue   
+                else:
                     logger.info(f'Converged at generation {iter} with best prompt: "{best_prompt}" | Fitness {best_fitness}')
                     logger.info(f'The final population is: {population}')
                     break
+
