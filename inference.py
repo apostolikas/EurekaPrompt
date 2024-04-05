@@ -32,7 +32,7 @@ class InferenceEvalauator:
 
     def evaluate_prompt(self, prompt):
         accuracy = 0
-        num_of_samples = 2 #len(self.testset)
+        num_of_samples = len(self.testset)
         file_name = f"./inference_logs/{self.args.task}_answers.txt"
 
         with open(file_name, 'w') as f:
