@@ -248,3 +248,25 @@ sports_und_inference_prompts = [
     "Embark on a journey to uncover knowledge, igniting curiosity and logic, while maintaining a positive mindset and focusing on understanding the problem, devising a strategy with organized data to dissect challenges into smaller parts, navigating the landscape methodically, and achieving both favorable outcomes and exceptional results, all while being deliberate in our approach and prioritizing strategic thinking"
 ]
 
+
+def load_inference_prompts(task):
+    if task == 'gsm8k':
+        return gsm8k_inference_prompts
+    elif task == 'svamp':
+        return svamp_inference_prompts
+    elif task == 'csqa':
+        return csqa_inference_prompts
+    elif task == 'abs_nar':
+        return abs_nar_inference_prompts
+    elif task == 'causal_judg':
+        return causal_judg_inference_prompts
+    elif task == 'date_under':
+        return date_under_inference_prompts
+    elif task == 'social_iqa':
+        return social_iqa_inference_prompts
+    elif task == 'sports_und':
+        return sports_und_inference_prompts
+    else:
+        raise ValueError("Task not supported")
+    
+    
