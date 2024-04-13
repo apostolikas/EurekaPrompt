@@ -27,8 +27,6 @@ class GenPrompt:
             initial_prompts = gsm8k_initial_prompts
         elif self.args.task == 'svamp':
             initial_prompts = svamp_initial_prompts
-        elif self.args.task == 'aqua':
-            initial_prompts = aqua_initial_prompts
         elif self.args.task == 'strategyqa':
             initial_prompts = strategyqa_initial_prompts
         elif self.args.task == 'csqa':
@@ -251,13 +249,11 @@ class GenPrompt:
     def mutate(self, child, population, fitness_dict):
 
         if self.args.task == 'csqa':
-            mutation_styles = commonsense_mutation_styles
+            mutation_styles = csqa_mutation_styles
         elif self.args.task == 'strategyqa':
             mutation_styles = strategyqa_mutation_styles
         elif self.args.task == 'gsm8k':
             mutation_styles = gsm8k_mutation_styles
-        elif self.args.task == 'aqua':
-            mutation_styles = aqua_mutation_styles
         elif self.args.task == 'svamp':
             mutation_styles = svamp_mutation_styles
         elif self.args.task in bb_tasks:
@@ -336,62 +332,13 @@ if __name__ == "__main__":
     logger_name = f"./evo_logs/Evo_{args.task}_output.log"
     logger = setup_logger('progress_logger', logger_name)
 
-    bb_tasks = ['abs_nar', 'causal_judg', 'date_under', 'disamb', 'logic_ded3', 'social_iqa', 'sports_und']
-
     tokenizer = AutoTokenizer.from_pretrained("berkeley-nest/Starling-LM-7B-alpha")
     model = AutoModelForCausalLM.from_pretrained("berkeley-nest/Starling-LM-7B-alpha", torch_dtype = torch.float16)
     model = model.to('cuda')
 
     soc_model = SocraticGPT(model, tokenizer)
 
-    if args.task == 'gsm8k':
-        original_test_dataset = read_jsonl('./data/gsm8k_test.jsonl')
-        testset = list(map(add_label, original_test_dataset))
-        original_train_dataset = read_jsonl('./data/gsm8k_train.jsonl')
-        trainset = list(map(add_label, original_train_dataset))
-
-    elif args.task == 'svamp':
-        with open('./data/SVAMP.json') as f:
-            testset = json.load(f)
-        testset = list(map(lambda x: {**x, 'full_question': x['Body'] + ' ' + x['Question']}, testset))
-        testset = list(map(lambda x: {**x, 'Answer': int(x['Answer']) if x['Answer'].is_integer() else x['Answer']}, testset))
-        trainset = testset
-
-    elif args.task == 'csqa':
-        testset = read_jsonl('./data/csqa_val.jsonl')
-        for item in testset:
-            choices = item["question"]["choices"]
-            choice_answers = ", ".join(map(format_choice, choices))
-            item["choice_answers"] = choice_answers
-
-        trainset = read_jsonl('./data/csqa_train.jsonl')
-        for item in trainset:
-            choices = item["question"]["choices"]
-            choice_answers = ", ".join(map(format_choice, choices))
-            item["choice_answers"] = choice_answers
-
-    elif args.task == 'strategyqa':
-        with open('./data/strategyqa_train.json')as f:
-            testset = json.load(f) 
-        trainset = testset
-
-    elif args.task == 'aqua':
-        testset = read_jsonl('./data/aqua_test.json')
-
-        for instance in testset:
-            instance['answer_choices'] = format_aqua_options(instance['options'])
-        trainset = testset
-
-    elif args.task in bb_tasks:
-        with open(f'./data/{args.task}.json') as f:
-            testset = json.load(f)
-
-        testset['examples'] = list(map(process_bb_example, testset['examples']))
-        trainset = testset
-
-    else:
-        raise ValueError("Task not supported")
-
+    trainset, testset = load_data(args.task)
 
     prompt_engine = GenPrompt(args, testset, soc_model, tokenizer, trainset)
 
