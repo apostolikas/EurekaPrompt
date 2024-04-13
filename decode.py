@@ -1,7 +1,7 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from datasets import load_dataset
 import torch
 from my_utils import *
+from prompts import *
 
 def generate_response(decode_strategy, model, tokenizer, question, instruction):
 
@@ -9,43 +9,43 @@ def generate_response(decode_strategy, model, tokenizer, question, instruction):
     inputs = tokenizer(model_input, return_tensors="pt").to('cuda')
 
     if decode_strategy == 'greedy':
-        outputs = model.generate(**inputs, do_sample = False, num_beams = 1, max_new_tokens = 250, pad_token_id = tokenizer.pad_token_id, eos_token_id = tokenizer.eos_token_id)
+        outputs = model.generate(**inputs, do_sample = False, num_beams = 1, max_new_tokens = 400, pad_token_id = tokenizer.pad_token_id, eos_token_id = tokenizer.eos_token_id)
         generated_text= tokenizer.batch_decode(outputs, skip_special_tokens=True)
 
     elif decode_strategy == 'contrastive_search':
-        outputs = model.generate(**inputs, penalty_alpha=0.6, top_k=4, max_new_tokens = 250, pad_token_id = tokenizer.pad_token_id, eos_token_id = tokenizer.eos_token_id)
+        outputs = model.generate(**inputs, penalty_alpha=0.6, top_k=4, max_new_tokens = 400, pad_token_id = tokenizer.pad_token_id, eos_token_id = tokenizer.eos_token_id)
         generated_text= tokenizer.batch_decode(outputs, skip_special_tokens=True)
 
     elif decode_strategy == 'multinomial_sampling':
-        outputs = model.generate(**inputs, do_sample=True, num_beams=1, max_new_tokens = 250, pad_token_id = tokenizer.pad_token_id, eos_token_id = tokenizer.eos_token_id)
+        outputs = model.generate(**inputs, do_sample=True, num_beams=1, max_new_tokens = 400, pad_token_id = tokenizer.pad_token_id, eos_token_id = tokenizer.eos_token_id)
         generated_text= tokenizer.batch_decode(outputs, skip_special_tokens=True)
 
     elif decode_strategy == 'beam_search':
-        outputs = model.generate(**inputs, num_beams=5, do_sample = False, max_new_tokens = 250, pad_token_id = tokenizer.pad_token_id, eos_token_id = tokenizer.eos_token_id)
+        outputs = model.generate(**inputs, num_beams=5, do_sample = False, max_new_tokens = 400, pad_token_id = tokenizer.pad_token_id, eos_token_id = tokenizer.eos_token_id)
         generated_text= tokenizer.batch_decode(outputs, skip_special_tokens=True)
 
     elif decode_strategy == 'beam_search_with_multinomial_sampling':
-        outputs = model.generate(**inputs, num_beams=5, do_sample=True, max_new_tokens = 250, pad_token_id = tokenizer.pad_token_id, eos_token_id = tokenizer.eos_token_id)
+        outputs = model.generate(**inputs, num_beams=5, do_sample=True, max_new_tokens = 400, pad_token_id = tokenizer.pad_token_id, eos_token_id = tokenizer.eos_token_id)
         generated_text= tokenizer.batch_decode(outputs, skip_special_tokens=True)
 
     elif decode_strategy == 'top_k_sampling':
-        outputs = model.generate(**inputs, do_sample=True, top_k=50, max_new_tokens = 250, pad_token_id = tokenizer.pad_token_id, eos_token_id = tokenizer.eos_token_id)
+        outputs = model.generate(**inputs, do_sample=True, top_k=50, max_new_tokens = 400, pad_token_id = tokenizer.pad_token_id, eos_token_id = tokenizer.eos_token_id)
         generated_text= tokenizer.batch_decode(outputs, skip_special_tokens=True)
     
     elif decode_strategy == 'top_p_sampling':
-        outputs = model.generate(**inputs, do_sample=True, top_p=0.9, max_new_tokens = 250, pad_token_id = tokenizer.pad_token_id, eos_token_id = tokenizer.eos_token_id)
+        outputs = model.generate(**inputs, do_sample=True, top_p=0.9, max_new_tokens = 400, pad_token_id = tokenizer.pad_token_id, eos_token_id = tokenizer.eos_token_id)
         generated_text= tokenizer.batch_decode(outputs, skip_special_tokens=True)
 
     elif decode_strategy == 'sampling0.25':
-        outputs = model.generate(**inputs, do_sample=True, top_k = 0, max_new_tokens = 250, pad_token_id = tokenizer.pad_token_id, eos_token_id = tokenizer.eos_token_id, temperature=0.25)
+        outputs = model.generate(**inputs, do_sample=True, top_k = 0, max_new_tokens = 400, pad_token_id = tokenizer.pad_token_id, eos_token_id = tokenizer.eos_token_id, temperature=0.25)
         generated_text= tokenizer.batch_decode(outputs, skip_special_tokens=True)
     
     elif decode_strategy == 'sampling0.5':
-        outputs = model.generate(**inputs, do_sample=True, top_k = 0, max_new_tokens = 250, pad_token_id = tokenizer.pad_token_id, eos_token_id = tokenizer.eos_token_id, temperature=0.5)
+        outputs = model.generate(**inputs, do_sample=True, top_k = 0, max_new_tokens = 400, pad_token_id = tokenizer.pad_token_id, eos_token_id = tokenizer.eos_token_id, temperature=0.5)
         generated_text= tokenizer.batch_decode(outputs, skip_special_tokens=True)
 
     elif decode_strategy == 'sampling0.75':
-        outputs = model.generate(**inputs, do_sample=True, top_k = 0, max_new_tokens = 250, pad_token_id = tokenizer.pad_token_id, eos_token_id = tokenizer.eos_token_id, temperature=0.75)
+        outputs = model.generate(**inputs, do_sample=True, top_k = 0, max_new_tokens = 400, pad_token_id = tokenizer.pad_token_id, eos_token_id = tokenizer.eos_token_id, temperature=0.75)
         generated_text= tokenizer.batch_decode(outputs, skip_special_tokens=True)
 
     else:
@@ -53,39 +53,34 @@ def generate_response(decode_strategy, model, tokenizer, question, instruction):
     
     return generated_text
 
+if __name__ == '__main__':
 
-tokenizer = AutoTokenizer.from_pretrained("berkeley-nest/Starling-LM-7B-alpha")
-model = AutoModelForCausalLM.from_pretrained("berkeley-nest/Starling-LM-7B-alpha", device_map='auto', torch_dtype=torch.float16)
+    tokenizer = AutoTokenizer.from_pretrained("berkeley-nest/Starling-LM-7B-alpha")
+    model = AutoModelForCausalLM.from_pretrained("berkeley-nest/Starling-LM-7B-alpha", device_map='auto', torch_dtype=torch.float16)
+    bb_tasks = ['abs_nar', 'causal_judg', 'date_under', 'disamb', 'logic_ded3', 'social_iqa', 'sports_und']
+    decode_strategies = ["greedy", "contrastive_search", "multinomial_sampling", "beam_search", "beam_search_with_multinomial_sampling", "top_k_sampling", "top_p_sampling", "sampling0.25", "sampling0.5", "sampling0.75"]
 
-original_test_dataset = read_jsonl('./data/gsm8k_test.jsonl')
-testset = list(map(add_label, original_test_dataset))
-original_train_dataset = read_jsonl('./data/gsm8k_train.jsonl')
-trainset = list(map(add_label, original_train_dataset))
+    task = 'gsm8k'
+    num_of_samples = 50
 
-decode_strategies = ["greedy", "contrastive_search", "multinomial_sampling", "beam_search", "beam_search_with_multinomial_sampling", "top_k_sampling", "top_p_sampling", "sampling0.25", "sampling0.5", "sampling0.75"]
-prompts = gsm8k_initial_prompts
+    _, testset = load_data(task)
+    prompts = load_inference_prompts(task)
 
-accuracy = 0
-num_of_samples = 2
-random.seed(0)
-samples = random.sample(testset, num_of_samples)
+    random.seed(0)
+    samples = random.sample(testset, num_of_samples)
+    file_name = f"./decode_results_{task}.txt"
 
-with open('decode_results.txt', 'w') as f:
+    with open(file_name, 'w') as f:
 
-    for prompt in prompts:
-        for decode_strategy in decode_strategies:
-            for i,sample in enumerate(samples):
-
-                responses = []
-
-                question = sample['question']
-                label = sample['label']
-
-                response_text = generate_response(decode_strategy, model, tokenizer, question, prompt)
-
-                f.write(f"Prompt: {prompt} | Decode Strategy: {decode_strategy} | Sample: {i} | Output: {response_text}\n")
-
-
+        for prompt in prompts:
+            for decode_strategy in decode_strategies:
+                for i,sample in enumerate(samples):
+                    responses = []
+                    question = sample['question']
+                    label = sample['label']
+                    response_text = generate_response(decode_strategy, model, tokenizer, question, prompt)
+                    f.write(f"Prompt: {prompt} | Decode Strategy: {decode_strategy} | Sample: {i} | Output: {response_text}\n")
+                    
 
 
 
