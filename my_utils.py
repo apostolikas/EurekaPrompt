@@ -4,6 +4,10 @@ import logging
 import re
 import json
 import string 
+import torch
+import math
+
+bb_tasks = ['abs_nar', 'causal_judg', 'date_under', 'disamb', 'logic_ded3', 'social_iqa', 'sports_und']
 
 def read_jsonl(path: str):
     with open(path) as fh:
@@ -282,3 +286,111 @@ def generate_mixed_choices(choices):
         mixed_choices += f"({label}) {choice_text}, "
     mixed_choices = mixed_choices[:-2] 
     return mixed_choices
+
+
+def read_answers(filename):
+    data = {}
+    with open(filename, 'r') as file:
+        lines = file.readlines()
+        current_prompt = None
+        for line in lines:
+            line = line.strip()
+            if line.startswith('Prompt:'):
+                current_prompt = line.split('Prompt: ')[1]
+                data[current_prompt] = []
+            elif line.startswith('Question:'):
+                _, result = line.split('Result: ')
+                if current_prompt:
+                    data[current_prompt].append(int(result))
+    return data
+
+def extract_responses(filename, model_name):
+
+    with open(filename, 'r') as file:
+        file_content = file.read()
+
+    lines = file_content.split('\n')
+    my_dictionary = {}
+    if model_name == 'starling' or model_name == 'openchat':
+    
+        for line in lines:
+            if line == '':
+                continue
+            sections = line.split('|')
+            for i in range(0, len(sections), 4):
+
+                if len(sections) > 4:
+                    prompt = sections[0].split(':')[1].strip()
+                    decode_strategy = sections[1].split(':')[1].strip()
+                    sample = sections[2].split('Sample:')[1].strip()
+                    output = ''.join(map(str, sections[2 + 1:]))
+                    output = output.split('GPT4 Correct Assistant:')[1].replace('"]', '')
+                else:
+                    prompt = sections[i].split(':')[1].strip()
+                    decode_strategy = sections[i + 1].split(':')[1].strip()
+                    sample = sections[i + 2].split('Sample:')[1].strip()
+                    output = sections[i + 3].split('GPT4 Correct Assistant:')[1].replace('"]', '')
+
+                if prompt not in my_dictionary:
+                    my_dictionary[prompt] = {}
+                if decode_strategy not in my_dictionary[prompt]:
+                    my_dictionary[prompt][decode_strategy] = {}
+                
+                my_dictionary[prompt][decode_strategy][sample] = output
+        return my_dictionary
+    else:
+        raise NotImplementedError("Model not supported")
+
+#Mean Pooling - Take attention mask into account for correct averaging
+def mean_pooling(model_output, attention_mask):
+    token_embeddings = model_output[0] #First element of model_output contains all token embeddings
+    input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+    return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+
+# Calculate entropy based on clustering
+def calculate_entropy(cluster_counts):
+    total_responses = sum(cluster_counts)
+    probabilities = [count / total_responses for count in cluster_counts]
+    entropy_value = -sum(p * math.log2(p) if p != 0 else 0 for p in probabilities)
+    return entropy_value
+
+
+def load_data(task):
+
+    if task == 'gsm8k':
+        original_test_dataset = read_jsonl('./gsm8k_test.jsonl')
+        testset = list(map(add_label, original_test_dataset))
+        original_train_dataset = read_jsonl('./gsm8k_train.jsonl')
+        trainset = list(map(add_label, original_train_dataset))
+
+    elif task == 'svamp':
+        with open('./data/SVAMP.json') as f:
+            testset = json.load(f)
+        testset = list(map(lambda x: {**x, 'full_question': x['Body'] + ' ' + x['Question']}, testset))
+        testset = list(map(lambda x: {**x, 'Answer': int(x['Answer']) if x['Answer'].is_integer() else x['Answer']}, testset))
+        trainset = testset
+
+    elif task == 'csqa':
+        testset = read_jsonl('./data/csqa_val.jsonl')
+        for item in testset:
+            choices = item["question"]["choices"]
+            choice_answers = ", ".join(map(format_choice, choices))
+            item["choice_answers"] = choice_answers
+
+        trainset = read_jsonl('./data/csqa_train.jsonl')
+        for item in trainset:
+            choices = item["question"]["choices"]
+            choice_answers = ", ".join(map(format_choice, choices))
+            item["choice_answers"] = choice_answers
+
+    elif task in bb_tasks:
+        with open(f'./data/{task}.json') as f:
+            testset = json.load(f)
+
+        testset['examples'] = list(map(process_bb_example, testset['examples']))
+        trainset = testset
+
+    else:
+        raise ValueError("Task not supported")
+    
+    return trainset, testset
