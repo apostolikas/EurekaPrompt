@@ -3,9 +3,25 @@ import torch
 from my_utils import *
 from prompts import *
 
-def generate_response(decode_strategy, model, tokenizer, question, instruction):
+def create_model_input(task, question, instruction, choices, narrative):
 
-    model_input = f"GPT4 Correct User:Q:{question}\nA: {instruction}<|end_of_turn|>GPT4 Correct Assistant:"
+    if task in ['gsm8k', 'svamp']:
+        model_input = f"GPT4 Correct User: Q:{question}\nA: {instruction}<|end_of_turn|>GPT4 Correct Assistant:"
+
+    elif task in ['csqa', 'social_iqa', 'sports_und', 'date_under', 'causal_judg']:
+        input_prompt = f'''Question: {question}\nAnswer Choices: {choices}\nAnswer: {instruction}'''
+        model_input = f'''GPT4 Correct User: {input_prompt}<|end_of_turn|>GPT4 Correct Assistant:'''
+
+    elif task == 'abs_nar':
+        input_prompt = f'''Question: Can you choose the most related proverb from the list of 5 proverbs given a narrative?\nNarrative: {narrative}\nAnswer choices: {choices}\nAnswer: {instruction}'''
+        model_input = f'''GPT4 Correct User: {input_prompt}<|end_of_turn|>GPT4 Correct Assistant:'''
+
+    return model_input
+
+def generate_response(task, decode_strategy, model, tokenizer, question, instruction, choices=None, narrative=None):
+
+    model_input = create_model_input(task, question, instruction, choices, narrative)
+    
     inputs = tokenizer(model_input, return_tensors="pt").to('cuda')
 
     if decode_strategy == 'greedy':
@@ -57,11 +73,10 @@ if __name__ == '__main__':
 
     tokenizer = AutoTokenizer.from_pretrained("berkeley-nest/Starling-LM-7B-alpha")
     model = AutoModelForCausalLM.from_pretrained("berkeley-nest/Starling-LM-7B-alpha", device_map='auto', torch_dtype=torch.float16)
-    bb_tasks = ['abs_nar', 'causal_judg', 'date_under', 'disamb', 'logic_ded3', 'social_iqa', 'sports_und']
     decode_strategies = ["greedy", "contrastive_search", "multinomial_sampling", "beam_search", "beam_search_with_multinomial_sampling", "top_k_sampling", "top_p_sampling", "sampling0.25", "sampling0.5", "sampling0.75"]
 
-    task = 'gsm8k'
-    num_of_samples = 50
+    task = 'svamp'
+    num_of_samples = 50 if task in ['gsm8k','svamp','csqa'] else 35
 
     _, testset = load_data(task)
     prompts = load_inference_prompts(task)
@@ -76,11 +91,30 @@ if __name__ == '__main__':
             for decode_strategy in decode_strategies:
                 for i,sample in enumerate(samples):
                     responses = []
-                    question = sample['question']
-                    label = sample['label']
-                    response_text = generate_response(decode_strategy, model, tokenizer, question, prompt)
+                    if task == 'gsm8k':
+                        question = sample['question']
+                        response_text = generate_response(task, decode_strategy, model, tokenizer, question, prompt)
+
+                    elif task == 'svamp':
+                        question = sample['full_question']
+                        response_text = generate_response(task, decode_strategy, model, tokenizer, question, prompt)
+
+                    elif task == 'csqa':
+                        question = sample['question']['stem']
+                        choices = sample['choice_answers']
+                        response_text = generate_response(task, decode_strategy, model, tokenizer, question, prompt, choices)
+
+                    elif task == 'abs_nar':
+                        narrative = sample['input']
+                        choices = sample['answer_choices']
+                        response_text = generate_response(task, decode_strategy, model, tokenizer, question, prompt, choices, narrative)
+
+                    elif task == 'causal_judg':
+                        question = sample['input']
+                        answer_choices = sample['answer_choices']
+                        response_text = generate_response(task, decode_strategy, model, tokenizer, question, prompt, choices)
+
                     f.write(f"Prompt: {prompt} | Decode Strategy: {decode_strategy} | Sample: {i} | Output: {response_text}\n")
-                    
 
 
 
