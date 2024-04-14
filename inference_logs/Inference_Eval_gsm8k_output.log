@@ -8,3 +8,18 @@ Evaluated prompt: Let's work this out in a step by step way to be sure we have t
 Evaluated prompt: Take a deep breath and work on this problem step-by-step | Accuracy: 0.6004548900682335 | Time: 7757.6741 seconds
 Evaluated prompt: Focus on strategic thinking to swiftly find the accurate solution | Accuracy: 0.6982562547384382 | Time: 6955.7904 seconds
 Evaluated prompt: This is very important to my career | Accuracy: 0.5921152388172858 | Time: 8033.2468 seconds
+-06-04 21:39:30 | Arguments: Namespace(task='gsm8k', use_icl_examples=False, num_icl_examples=1, model='starling', seed=0)
+-06-04 21:39:30 | Evaluation of the prompt population
+-06-04 23:49:42 | Evaluated prompt: Let's think step by step | Accuracy: 0.6376042456406369 | Time: 7812.1355 seconds
+-07-04 02:18:25 | Evaluated prompt: Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step | Accuracy: 0.5056861258529188 | Time: 8923.6805 seconds
+-07-04 04:42:49 | Evaluated prompt: Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a complete plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer | Accuracy: 0.5223654283548143 | Time: 8663.5629 seconds
+-07-04 06:54:33 | Evaluated prompt: Let's work this out in a step by step way to be sure we have the right answer | Accuracy: 0.6269901440485216 | Time: 7904.126 seconds
+-07-04 09:10:41 | Evaluated prompt: Take a deep breath and work on this problem step-by-step | Accuracy: 0.620166793025019 | Time: 8168.2587 seconds
+-07-04 11:11:02 | Evaluated prompt: Focus on strategic thinking to swiftly find the accurate solution | Accuracy: 0.7012888551933283 | Time: 7220.724 seconds
+-09-04 16:26:41 | Arguments: Namespace(task='gsm8k', use_icl_examples=False, num_icl_examples=1, model='mixtral', seed=0)
+-09-04 16:26:41 | Evaluation of the prompt population
+-10-04 01:22:53 | Evaluated prompt: Let's think step by step | Accuracy: 0.6194086429112965 | Time: 32171.3859 seconds
+-10-04 12:19:00 | Evaluated prompt: Let's first understand the problem and devise a plan to solve the problem. Then, let's carry out the plan and solve the problem step by step | Accuracy: 0.604245640636846 | Time: 39366.9335 seconds
+-10-04 14:56:27 | Arguments: Namespace(task='gsm8k', use_icl_examples=False, num_icl_examples=1, model='mixtral', seed=0)
+-10-04 14:56:27 | Evaluation of the prompt population
+-10-04 23:54:04 | Evaluated prompt: Focus on strategic thinking to swiftly find the accurate solution | Accuracy: 0.6027293404094011 | Time: 32256.5344 seconds
