@@ -76,7 +76,7 @@ if __name__ == '__main__':
     decode_strategies = ["greedy", "contrastive_search", "multinomial_sampling", "beam_search", "beam_search_with_multinomial_sampling", "top_k_sampling", "top_p_sampling", "sampling0.25", "sampling0.5", "sampling0.75"]
 
     task = 'svamp'
-    num_of_samples = 50 if task in ['gsm8k','svamp','csqa'] else 35
+    num_of_samples = 50 #if task in ['gsm8k','svamp','csqa'] else 35
 
     _, testset = load_data(task)
     prompts = load_inference_prompts(task)
@@ -109,11 +109,11 @@ if __name__ == '__main__':
                         choices = sample['answer_choices']
                         response_text = generate_response(task, decode_strategy, model, tokenizer, question, prompt, choices, narrative)
 
-                    elif task == 'causal_judg':
+                    elif task in ['causal_judg', 'social_iqa', 'date_under', 'sports_und']:
                         question = sample['input']
                         answer_choices = sample['answer_choices']
                         response_text = generate_response(task, decode_strategy, model, tokenizer, question, prompt, choices)
-
+                    
                     f.write(f"Prompt: {prompt} | Decode Strategy: {decode_strategy} | Sample: {i} | Output: {response_text}\n")
 
 
