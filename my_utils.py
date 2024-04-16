@@ -358,9 +358,9 @@ def calculate_entropy(cluster_counts):
 def load_data(task):
 
     if task == 'gsm8k':
-        original_test_dataset = read_jsonl('./gsm8k_test.jsonl')
+        original_test_dataset = read_jsonl('./data/gsm8k_test.jsonl')
         testset = list(map(add_label, original_test_dataset))
-        original_train_dataset = read_jsonl('./gsm8k_train.jsonl')
+        original_train_dataset = read_jsonl('./data/gsm8k_train.jsonl')
         trainset = list(map(add_label, original_train_dataset))
 
     elif task == 'svamp':
