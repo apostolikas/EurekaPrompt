@@ -2,6 +2,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 from my_utils import *
 from prompts import *
+from tqdm import tqdm
 
 def create_model_input(task, question, instruction, choices, narrative):
 
@@ -75,46 +76,47 @@ if __name__ == '__main__':
     model = AutoModelForCausalLM.from_pretrained("berkeley-nest/Starling-LM-7B-alpha", device_map='auto', torch_dtype=torch.float16)
     decode_strategies = ["greedy", "contrastive_search", "multinomial_sampling", "beam_search", "beam_search_with_multinomial_sampling", "top_k_sampling", "top_p_sampling", "sampling0.25", "sampling0.5", "sampling0.75"]
 
-    task = 'svamp'
-    num_of_samples = 50 #if task in ['gsm8k','svamp','csqa'] else 35
+    tasks = ['abs_nar']#, 'csqa', 'abs_nar', 'causal_judg', 'social_iqa', 'date_under', 'sports_und']
+    for task in tasks:
+        num_of_samples = 50 #if task in ['gsm8k','svamp','csqa'] else 35
 
-    _, testset = load_data(task)
-    prompts = load_inference_prompts(task)
+        _, testset = load_data(task)
+        prompts = load_inference_prompts(task)
+        print(f"Testset is : {type(testset)}")
+        random.seed(0)
+        samples = random.sample(testset, num_of_samples)
+        file_name = f"./decoded/decode_results_{task}.txt"
 
-    random.seed(0)
-    samples = random.sample(testset, num_of_samples)
-    file_name = f"./decode_results_{task}.txt"
+        with open(file_name, 'w') as f:
 
-    with open(file_name, 'w') as f:
+            for prompt in prompts:
+                for decode_strategy in decode_strategies:
+                    for i, sample in tqdm(enumerate(samples)):
+                        responses = []
+                        if task == 'gsm8k':
+                            question = sample['question']
+                            response_text = generate_response(task, decode_strategy, model, tokenizer, question, prompt)
 
-        for prompt in prompts:
-            for decode_strategy in decode_strategies:
-                for i,sample in enumerate(samples):
-                    responses = []
-                    if task == 'gsm8k':
-                        question = sample['question']
-                        response_text = generate_response(task, decode_strategy, model, tokenizer, question, prompt)
+                        elif task == 'svamp':
+                            question = sample['full_question']
+                            response_text = generate_response(task, decode_strategy, model, tokenizer, question, prompt)
 
-                    elif task == 'svamp':
-                        question = sample['full_question']
-                        response_text = generate_response(task, decode_strategy, model, tokenizer, question, prompt)
+                        elif task == 'csqa':
+                            question = sample['question']['stem']
+                            choices = sample['choice_answers']
+                            response_text = generate_response(task, decode_strategy, model, tokenizer, question, prompt, choices)
 
-                    elif task == 'csqa':
-                        question = sample['question']['stem']
-                        choices = sample['choice_answers']
-                        response_text = generate_response(task, decode_strategy, model, tokenizer, question, prompt, choices)
+                        elif task == 'abs_nar':
+                            narrative = sample['input']
+                            choices = sample['answer_choices']
+                            response_text = generate_response(task, decode_strategy, model, tokenizer, question, prompt, choices, narrative)
 
-                    elif task == 'abs_nar':
-                        narrative = sample['input']
-                        choices = sample['answer_choices']
-                        response_text = generate_response(task, decode_strategy, model, tokenizer, question, prompt, choices, narrative)
-
-                    elif task in ['causal_judg', 'social_iqa', 'date_under', 'sports_und']:
-                        question = sample['input']
-                        answer_choices = sample['answer_choices']
-                        response_text = generate_response(task, decode_strategy, model, tokenizer, question, prompt, choices)
-                    
-                    f.write(f"Prompt: {prompt} | Decode Strategy: {decode_strategy} | Sample: {i} | Output: {response_text}\n")
+                        elif task in ['causal_judg', 'social_iqa', 'date_under', 'sports_und']:
+                            question = sample['input']
+                            answer_choices = sample['answer_choices']
+                            response_text = generate_response(task, decode_strategy, model, tokenizer, question, prompt, choices)
+                        
+                        f.write(f"Prompt: {prompt} | Decode Strategy: {decode_strategy} | Sample: {i} | Output: {response_text}\n")
 
 
 
