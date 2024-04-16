@@ -388,6 +388,7 @@ def load_data(task):
             testset = json.load(f)
 
         testset['examples'] = list(map(process_bb_example, testset['examples']))
+        testset = testset['examples']
         trainset = testset
 
     else:
