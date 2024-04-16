@@ -397,20 +397,21 @@ def load_data(task):
 
 
 def extract_final_results(task, input_text):
-    input_text = input_text.lower().replace("\\n", " ")
-    if re.search(r'answer', input_text, re.IGNORECASE):
-        match = re.search(r'answer\s*:?\s*(\d+)', input_text, re.IGNORECASE)
-        if match:
-            return int(match.group(1))
-        else:
-            answer_index = re.search(r'answer', input_text, re.IGNORECASE).end()
-            numbers = re.findall(r'\d+', input_text[answer_index:])
-            if numbers:
-                return int(numbers[0])
-    
-    numbers = re.findall(r'\d+', input_text)
-    if numbers:
-        return int(numbers[-1])
+    if task == 'gsm8k':
+        input_text = input_text.lower().replace("\\n", " ").replace(",", "")
+        if re.search(r'answer', input_text, re.IGNORECASE):
+            match = re.search(r'answer\s*:?\s*(\d+)', input_text, re.IGNORECASE)
+            if match:
+                return int(match.group(1))
+            else:
+                answer_index = re.search(r'answer', input_text, re.IGNORECASE).end()
+                numbers = re.findall(r'\d+', input_text[answer_index:])
+                if numbers:
+                    return int(numbers[0])
+        
+        numbers = re.findall(r'\d+', input_text)
+        if numbers:
+            return int(numbers[-1])
 
     elif task == 'csqa':
         answer = re.findall(r'A|B|C|D|E', input_text)
@@ -427,5 +428,3 @@ def extract_final_results(task, input_text):
         answer = re.findall(r'A|B|C|D|E', input_text)
         answer = answer[0] if len(answer) > 0 else ""
         return answer
-    
-    
