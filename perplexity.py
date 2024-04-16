@@ -11,7 +11,7 @@ if __name__ == '__main__':
     prompts = gsm8k_inference_prompts
 
     task = 'gsm8k'
-    num_of_samples = 50 #if task in ['gsm8k','svamp','csqa'] else 35
+    num_of_samples = 50
     prompts = load_inference_prompts(task)
     _, testset = load_data(task)
     random.seed(0)
@@ -25,7 +25,7 @@ if __name__ == '__main__':
             if task == 'gsm8k':
                 question = sample['question']
                 model_input = f'''Question: {question}\nAnswer: {prompt}'''
-                input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
+                input_texts = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
 
             elif task == 'svamp':
                 question = sample['full_question']
@@ -36,7 +36,7 @@ if __name__ == '__main__':
                 question = sample['question']['stem']
                 choices = sample['choice_answers']
                 model_input = f'''Question: {question}\nAnswer Choices: {choices}\nAnswer: {prompt}'''
-                input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
+                input_texts = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
 
             elif task == 'abs_nar':
                 narrative = sample['input']
@@ -57,11 +57,19 @@ if __name__ == '__main__':
     # Write the results to a file
     with open(f'./perplexities/perplexity_{task}.txt', 'w') as file:
         for prompt, input_texts in input_dict.items():
+
+            file.write(f"Prompt: {prompt}\n")
+
             results = perplexity.compute(model_id=model_name,
                                         add_start_token=False,
                                         predictions=input_texts)
-            file.write(f"Prompt: {prompt} | Mean: {results['mean_perplexity']}\n")
+            
+            for i, perplexity_value in enumerate(results['perplexities'], start=1):
+                file.write(f"Question: {i} | Perplexity: {perplexity_value}\n")
 
+            print(f"Avg Perplexity for prompt {prompt}: {results['mean_perplexity']}\n")
+            file.write(f"Avg Perplexity: {results['mean_perplexity']}\n")
+            
 
 
 
