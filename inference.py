@@ -234,9 +234,9 @@ class InferenceEvalauator:
 
         elif self.args.task == 'abs_nar':
 
-            num_of_samples = len(self.testset['examples'])
+            num_of_samples = len(self.testset)
             random.seed(self.args.seed)
-            samples = random.sample(self.testset['examples'], num_of_samples)
+            samples = random.sample(self.testset, num_of_samples)
 
             for i, sample in enumerate(tqdm(samples)):
                 narrative = sample['input']
@@ -255,9 +255,9 @@ class InferenceEvalauator:
                 
         elif self.args.task == 'disamb':
 
-            num_of_samples = len(self.testset['examples'])
+            num_of_samples = len(self.testset)
             random.seed(self.args.seed)
-            samples = random.sample(self.testset['examples'], num_of_samples)
+            samples = random.sample(self.testset, num_of_samples)
             question = 'Can you clarify the meaning of the sentence with ambiguous pronouns?'
 
             for i, sample in enumerate(tqdm(samples)):
@@ -277,9 +277,9 @@ class InferenceEvalauator:
 
         elif self.args.task == 'logic_ded3':
 
-            num_of_samples = len(self.testset['examples'])
+            num_of_samples = len(self.testset)
             random.seed(self.args.seed)
-            samples = random.sample(self.testset['examples'], num_of_samples)
+            samples = random.sample(self.testset, num_of_samples)
             question = 'What is the correct answer based on the context?'
 
             for i, sample in enumerate(tqdm(samples)):
@@ -299,9 +299,9 @@ class InferenceEvalauator:
 
         elif self.args.task == 'social_iqa' or self.args.task == 'sports_und' or self.args.task == 'date_under' or self.args.task == 'causal_judg':
 
-            num_of_samples = len(self.testset['examples'])
+            num_of_samples = len(self.testset)
             random.seed(self.args.seed)
-            samples = random.sample(self.testset['examples'], num_of_samples)
+            samples = random.sample(self.testset, num_of_samples)
 
             for i, sample in enumerate(tqdm(samples)):
                 question = sample['input']
@@ -326,13 +326,13 @@ class InferenceEvalauator:
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='Settings for the Inference')
-    parser.add_argument('--task', default='social_iqa', type=str, help='Task to be solved. Choose one of: [gsm8k, csqa]')
+    parser.add_argument('--task', default='sports_und', type=str, help='Task to be solved. Choose one of: [gsm8k, csqa]')
     parser.add_argument('--use_icl_examples', default=False, type=bool, help='whether to use in-context learning examples or not')
     parser.add_argument('--num_icl_examples', default=1, type=int, help='number of in-context learning examples used for evaluation')
     parser.add_argument('--model', default='starling', type=str, help='which model to use')
     parser.add_argument('--seed', default=0, type=int, help='type of mutation')
     args = parser.parse_args()
-    
+    print(args)
     logger_name = f"./inference_logs/Inference_Eval_{args.task}_output.log"
     logger = setup_logger('progress_logger', logger_name)
 
