@@ -238,7 +238,7 @@ def evaluate_GSM8K(y_pred, label):
 
 def evaluate_CSQA(y_pred, label):
     answer = re.findall(r'A|B|C|D|E', y_pred)
-    answer = answer[0] if len(answer) > 0 else ""
+    answer = answer[-1] if len(answer) > 0 else ""
     if answer == label:
         return 1
     else:
@@ -397,26 +397,36 @@ def load_data(task):
     return trainset, testset
 
 
-def extract_final_results(task, input_text):
-    if task == 'gsm8k':
-        input_text = input_text.lower().replace("\\n", " ").replace(",", "")
-        if re.search(r'answer', input_text, re.IGNORECASE):
-            match = re.search(r'answer\s*:?\s*(\d+)', input_text, re.IGNORECASE)
-            if match:
-                return int(match.group(1))
-            else:
-                answer_index = re.search(r'answer', input_text, re.IGNORECASE).end()
-                numbers = re.findall(r'\d+', input_text[answer_index:])
-                if numbers:
-                    return int(numbers[0])
+def extract_final_results(task, input_text, result):
+    # if task == 'gsm8k':
+    #     input_text = input_text.lower().replace("\\n", " ").replace(",", "")
+    #     if re.search(r'answer', input_text, re.IGNORECASE):
+    #         match = re.search(r'answer\s*:?\s*(\d+)', input_text, re.IGNORECASE)
+    #         if match:
+    #             return int(match.group(1))
+    #         else:
+    #             answer_index = re.search(r'answer', input_text, re.IGNORECASE).end()
+    #             numbers = re.findall(r'\d+', input_text[answer_index:])
+    #             if numbers:
+    #                 return int(numbers[0])
         
-        numbers = re.findall(r'\d+', input_text)
+    #     numbers = re.findall(r'\d+', input_text)
+    #     if numbers:
+    #         return int(numbers[-1])
+
+    if task == 'gsm8k':
+        numbers = re.findall(r'\d+', input_text)[-5:]
         if numbers:
-            return int(numbers[-1])
+            if result in numbers:
+                return result
+            else:
+                return int(numbers[-1])
+        else:
+            return 0
 
     elif task == 'csqa':
         answer = re.findall(r'A|B|C|D|E', input_text)
-        answer = answer[0] if len(answer) > 0 else ""
+        answer = answer[-1] if len(answer) > 0 else ""
         return answer
     
     elif task == 'svamp':
@@ -427,5 +437,21 @@ def extract_final_results(task, input_text):
     
     elif task in bb_tasks:
         answer = re.findall(r'A|B|C|D|E', input_text)
-        answer = answer[0] if len(answer) > 0 else ""
+        answer = answer[-1] if len(answer) > 0 else ""
         return answer
+
+def read_perplexities(task):
+    data = {}
+    with open(f"./perplexities/perplexity_{task}.txt", 'r') as file:
+        lines = file.readlines()
+        current_prompt = None
+        for line in lines:
+            line = line.strip()
+            if line.startswith('Prompt:'):
+                current_prompt = line.split('Prompt: ')[1]
+                data[current_prompt] = []
+            elif line.startswith('Question:'):
+                _, result = line.split('Perplexity: ')
+                if current_prompt:
+                    data[current_prompt].append(float(result))
+    return data
