@@ -154,7 +154,7 @@ class GenPrompt:
         elif self.args.task == 'abs_nar':
 
             random.seed(self.args.seed)
-            samples = random.sample(self.testset['examples'], self.args.num_of_samples)
+            samples = random.sample(self.testset, self.args.num_of_samples)
 
             for sample in tqdm(samples):
                 narrative = sample['input']
@@ -169,7 +169,7 @@ class GenPrompt:
         elif self.args.task == 'disamb':
 
             random.seed(self.args.seed)
-            samples = random.sample(self.testset['examples'], self.args.num_of_samples)
+            samples = random.sample(self.testset, self.args.num_of_samples)
             question = 'Can you claritfy the meaning of the sentence with ambiguous pronouns?'
 
             for sample in tqdm(samples):
@@ -185,7 +185,7 @@ class GenPrompt:
         elif self.args.task == 'logic_ded3':
 
             random.seed(self.args.seed)
-            samples = random.sample(self.testset['examples'], self.args.num_of_samples)
+            samples = random.sample(self.testset, self.args.num_of_samples)
             question = 'What is the correct answer based on the context?'
 
             for sample in tqdm(samples):
@@ -201,7 +201,7 @@ class GenPrompt:
         elif self.args.task == 'social_iqa' or self.args.task == 'sports_und' or self.args.task == 'date_under' or self.args.task == 'causal_judg':
 
             random.seed(self.args.seed)
-            samples = random.sample(self.testset['examples'], self.args.num_of_samples)
+            samples = random.sample(self.testset, self.args.num_of_samples)
 
             for sample in tqdm(samples):
                 question = sample['input']
@@ -241,7 +241,8 @@ class GenPrompt:
         print(f"The parents are: {[parent_prompt1, parent_prompt2]}")
         final_prompt = crossover_dialogue(self.helper_model, parent_prompt1, parent_prompt2)
         final_prompt = final_prompt[-1]
-        print(f"child prompt is a {type(final_prompt)}: {final_prompt}")
+        print(f'The child prompt is: "{final_prompt}"')
+        LOGGER.info(f'Parent 1: "{parent_prompt1}" | Parent 2: "{parent_prompt2}" | Child: "{final_prompt}"')
 
         return final_prompt
 
@@ -265,15 +266,20 @@ class GenPrompt:
 
         if random.random() > 0.5:
             random.seed() # delete
-            mutation_style = random.choice(mutation_styles)
-            print(f"Mutating the child with mutation style with index: {mutation_styles.index(mutation_style)}")
+            mutation_style_normal = random.choice(mutation_styles)
+            print(f"Mutating the child with mutation style with index: {mutation_styles.index(mutation_style_normal)}")
             #mutated_child = mutation_dialogue(self.helper_model, mutation_style, child)
-            mutated_child = mutation_dialogue(self.helper_model, mutation_style, child, False, None)
+            mutated_child = mutation_dialogue(self.helper_model, mutation_style_normal, child, False, None)
             if isinstance(mutated_child, list):
                 mutated_child = mutated_child[-1]
             print(f"The mutated child prompt is a {type(mutated_child)}: {mutated_child}")
-
             new_prompts.append(mutated_child)
+            LOGGER.info(f'Mutating the child with mutation style: "{mutation_style_normal}"')
+            LOGGER.info(f'The mutated child prompt is: "{mutated_child}"')
+        else:
+            mutation_style_normal = None
+            
+
 
         if self.args.mutate_population:
             random.seed() # delete
@@ -281,8 +287,7 @@ class GenPrompt:
             mutation_style = random.choice(mutation_styles)
             random_prompt = random.choice(population)
             print(f"The prompt that will be mutated is: {random_prompt}")
-
-            use_words = True if random.random() > 0.3 else False
+            use_words = True #if random.random() > 0.3 else False
 
             if use_words == True:
 
@@ -301,28 +306,31 @@ class GenPrompt:
                     words_to_use = "step by step"
             else:
                 words_to_use = None
-                            
+            
+            LOGGER.info(f'The prompt that will go under guided mutation is: "{random_prompt}" | Mutation style: "{mutation_style}" | Words to use: "{words_to_use}"')
+
             # new_mutated_child = mutation_dialogue(self.helper_model, mutation_style, random_prompt)
             new_mutated_child = mutation_dialogue(self.helper_model, mutation_style, random_prompt, use_words, words_to_use)
 
             if isinstance(new_mutated_child, list):
                 new_mutated_child = new_mutated_child[-1]
-                
+
             new_prompts.append(new_mutated_child)
             print(f"The mutated prompt is a {type(new_mutated_child)}: {new_mutated_child}")
+            LOGGER.info(f'The prompt after guided mutation is: "{new_mutated_child}"')
         
-        return new_prompts
+        return new_prompts, mutation_style_normal, mutation_style, words_to_use
     
 
 
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='Settings for the Evolutionary Algorithms')
-    parser.add_argument('--task', default='disamb', type=str, help='Task to be solved. Choose one of: [gsm8k, csqa, aqua, svamp, strategyqa]')
+    parser.add_argument('--task', default='date_under', type=str, help='Task to be solved. Choose one of: [gsm8k, csqa, aqua, svamp, strategyqa]')
     parser.add_argument('--use_icl_examples', default=False, type=bool, help='whether to use in-context learning examples or not')
     parser.add_argument('--num_icl_examples', default=1, type=int, help='number of in-context learning examples used for evaluation')
-    parser.add_argument('--num_of_samples', default=35, type=int, help='number of samples used for evaluation')
-    parser.add_argument('--iterations', default=20, type=int, help='number of iterations for the EA')
+    parser.add_argument('--num_of_samples', default=100, type=int, help='number of samples used for evaluation')
+    parser.add_argument('--iterations', default=100, type=int, help='number of iterations for the EA')
     parser.add_argument('--number_of_mutations', default=1, type=int, help='number of mutations to perform')
     parser.add_argument('--seed', default=0, type=int, help='type of mutation')
     parser.add_argument('--mutate_population', default=True, type=bool, help='whether to mutate the population or not')
@@ -330,7 +338,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(args)
     logger_name = f"./evo_logs/Evo_{args.task}_output.log"
-    logger = setup_logger('progress_logger', logger_name)
+    LOGGER = setup_logger('progress_logger', logger_name)
 
     tokenizer = AutoTokenizer.from_pretrained("berkeley-nest/Starling-LM-7B-alpha")
     model = AutoModelForCausalLM.from_pretrained("berkeley-nest/Starling-LM-7B-alpha", torch_dtype = torch.float16)
@@ -349,187 +357,195 @@ if __name__ == "__main__":
     for iter in range(args.iterations):
 
         if iter == 0:
-            logger.info(f"Arguments: {args}")
-            logger.info(f"Evaluation of the initial population")
+            LOGGER.info(f"Arguments: {args}")
+            LOGGER.info(f"Evaluation of the initial population")
             population = prompt_engine.initialise_population()
+            initial_population = population
             print(f"The population is {population}")
             # fitness_dict = prompt_engine.evaluate_population(population)
 
-            if args.task == 'abs_nar':
+            if args.task == 'csqa':
+
                 fitness_dict = {
-                    "Let's think step by step": 0.5142857142857142,
-                    "Let's devise a plan and solve the problem step by step":  0.37142857142857144,
-                    "Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence)":  0.14285714285714285,
-                    "Let's work this out in a step by step way to be sure we have the right answer":  0.4,
-                    "Take a deep breath and work on this problem step-by-step":  0.45714285714285713,
-                    "Start by dissecting the problem into its components, then address each part methodically":  0.34285714285714286,
-                    "Dissect the problem carefully, address each part":  0.34285714285714286,
-                    "Let's dive in and solve this challenge step by step":  0.5142857142857142,
-                    "Approach the problem with a keen eye for detail and methodical precision":  0.7142857142857143,
-                    "Embark on a quest for understanding, traversing the problem landscape with curiosity and logic":  0.7428571428571429,
-                    "Your attention to detail here would mean everything":  0.7714285714285715,
-                    "Please, let's focus and ensure we get the correct answer":  0.7714285714285715,
-                    "Ensure that you read the question carefully and understand the problem before attempting to solve it":  0.5714285714285714,
-                    "Dive in this problem and find the right answer": 0.6857142857142857,
-                    "You can do this! Be careful in the calculations": 0.5142857142857142,
-                    # "It is very important to my career": 0.7714285714285715,
-                    "Let's think slowly and carefully": 0.42857142857142855,
+                    "Let's think step by step": 0.8,
+                    "Let's devise a plan and solve the problem step by step": 0.8,
+                    "Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a complete plan.Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer": 0.72,
+                    "Let's work this out in a step by step way to be sure we have the right answer": 0.84,
+                    "Take a deep breath and work on this problem step-by-step": 0.79,
+                    "Analyze this step by step": 0.83,
+                    "Start by dissecting the problem into its components, then address each part methodically": 0.66,
+                    "Let's approach this methodically, breaking it into smaller tasks": 0.79,
+                    "Dissect the problem carefully, address each part": 0.73,
+                    "Let's dive in this challenge": 0.8,
+                    "Approach the problem with a keen eye for detail and methodical precision": 0.81,
+                    "Embark on a quest for understanding, traversing the problem landscape with curiosity and logic": 0.78,
+                    "Your attention to detail here would mean everything": 0.8,
+                    "Please, let's focus and ensure we nail this down": 0.77,
+                }
+
+            elif args.task == 'abs_nar':
+
+                fitness_dict = {
+                    "Let's think step by step": 0.56,
+                    "Let's devise a plan and solve the problem step by step":  0.39,
+                    "Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence)":  0.29,
+                    "Let's work this out in a step by step way to be sure we have the right answer":  0.52,
+                    "Take a deep breath and work on this problem step-by-step":  0.57,
+                    "Start by dissecting the problem into its components, then address each part methodically":  0.4,
+                    "Dissect the problem carefully, address each part":  0.34,
+                    "Let's dive in and solve this challenge step by step":  0.56,
+                    "Approach the problem with a keen eye for detail and methodical precision":  0.46,
+                    "Embark on a quest for understanding, traversing the problem landscape with curiosity and logic":  0.48,
+                    "Your attention to detail here would mean everything":  0.48,
+                    "Please, let's focus and ensure we get the correct answer":  0.41,
+                    "Ensure that you read the question carefully and understand the problem before attempting to solve it":  0.49,
+                    "Dive in this problem and find the right answer": 0.59,
+                    "You can do this! Be careful in the calculations": 0.51,
+                    "Let's think slowly and carefully": 0.6,
                 }
 
             elif args.task == 'causal_judg':
-                fitness_dict = {
-                    "Let's think step by step": 0.45714285714285713,
-                    "Let's devise a plan and solve the problem step by step": 0.2857142857142857,
-                    "Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence)": 0.34285714285714286,
-                    "Let's work this out in a step by step way to be sure we have the right answer": 0.2857142857142857,
-                    "Take a deep breath and work on this problem step-by-step": 0.37142857142857144,
-                    "Start by dissecting the problem into its components, then address each part methodically": 0.5428571428571428,
-                    "Let's approach this methodically, breaking it into smaller tasks": 0.42857142857142855,
-                    "Dissect the problem carefully, address each part": 0.5428571428571428,
-                    "Let's dive in and solve this challenge step by step": 0.6285714285714286,
-                    "Approach the problem with a keen eye for detail and methodical precision": 0.4857142857142857,
-                    "Embark on a quest for understanding, traversing the problem landscape with curiosity and logic": 0.5428571428571428,
-                    "Your attention to detail here would mean everything": 0.45714285714285713,
-                    "Please, let's focus and ensure we get the correct answer": 0.5714285714285714,
-                    "Ensure that you read the question carefully and understand the problem before attempting to solve it": 0.5142857142857142,
-                    "Dive in this problem and find the right answer": 0.6571428571428571,
-                    "You can do this! Be careful in the calculations": 0.5714285714285714,
-                    # "It is very important to my career": 0.4857142857142857,
-                    "Let's think slowly and carefully": 0.5428571428571428,
-                }
+                fitness_dict = prompt_engine.evaluate_population(population)
+
+            #     # fitness_dict = {
+            #     #     "Let's think step by step": 0.45714285714285713,
+            #     #     "Let's devise a plan and solve the problem step by step": 0.2857142857142857,
+            #     #     "Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence)": 0.34285714285714286,
+            #     #     "Let's work this out in a step by step way to be sure we have the right answer": 0.2857142857142857,
+            #     #     "Take a deep breath and work on this problem step-by-step": 0.37142857142857144,
+            #     #     "Start by dissecting the problem into its components, then address each part methodically": 0.5428571428571428,
+            #     #     "Let's approach this methodically, breaking it into smaller tasks": 0.42857142857142855,
+            #     #     "Dissect the problem carefully, address each part": 0.5428571428571428,
+            #     #     "Let's dive in and solve this challenge step by step": 0.6285714285714286,
+            #     #     "Approach the problem with a keen eye for detail and methodical precision": 0.4857142857142857,
+            #     #     "Embark on a quest for understanding, traversing the problem landscape with curiosity and logic": 0.5428571428571428,
+            #     #     "Your attention to detail here would mean everything": 0.45714285714285713,
+            #     #     "Please, let's focus and ensure we get the correct answer": 0.5714285714285714,
+            #     #     "Ensure that you read the question carefully and understand the problem before attempting to solve it": 0.5142857142857142,
+            #     #     "Dive in this problem and find the right answer": 0.6571428571428571,
+            #     #     "You can do this! Be careful in the calculations": 0.5714285714285714,
+            #     #     # "It is very important to my career": 0.4857142857142857,
+            #     #     "Let's think slowly and carefully": 0.5428571428571428,
+            #     # }
 
             elif args.task == 'date_under':
-                fitness_dict = {
-                    "Let's think step by step": 0.6571428571428571,
-                    "Let's devise a plan and solve the problem step by step": 0.11428571428571428,
-                    "Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence)": 0.22857142857142856,
-                    "Let's work this out in a step by step way to be sure we have the right answer": 0.5714285714285714,
-                    "Take a deep breath and work on this problem step-by-step": 0.08571428571428572,
-                    "Start by dissecting the problem into its components, then address each part methodically": 0.42857142857142855,
-                    "Let's approach this methodically, breaking it into smaller tasks": 0.37142857142857144,
-                    "Dissect the problem carefully, address each part": 0.4,
-                    "Let's dive in and solve this challenge step by step": 0.5714285714285714,
-                    "Approach the problem with a keen eye for detail and methodical precision": 0.5428571428571428,
-                    "Embark on a quest for understanding, traversing the problem landscape with curiosity and logic": 0.6571428571428571,
-                    "Your attention to detail here would mean everything": 0.5714285714285714,
-                    "Please, let's focus and ensure we get the correct answer": 0.6285714285714286,
-                    "Ensure that you read the question carefully and understand the problem before attempting to solve it": 0.4857142857142857,
-                    "Dive in this problem and find the right answer": 0.6285714285714286,
-                    "You can do this! Be careful in the calculations": 0.5428571428571428,
-                    # "It is very important to my career": 0.6285714285714286,
-                    "Let's think slowly and carefully": 0.6,
-                }
-                
-            elif args.task == 'disamb':
-                fitness_dict = {
-                    "Let's think step by step": 0.5142857142857142,
-                    "Let's devise a plan and solve the problem step by step": 0.37142857142857144,
-                    "Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence)": 0.34285714285714286,
-                    "Let's work this out in a step by step way to be sure we have the right answer": 0.05714285714285714,
-                    "Take a deep breath and work on this problem step-by-step": 0.6,
-                    "Start by dissecting the problem into its components, then address each part methodically": 0.42857142857142855,
-                    "Let's approach this methodically, breaking it into smaller tasks": 0.37142857142857144,
-                    "Dissect the problem carefully, address each part": 0.37142857142857144,
-                    "Let's dive in and solve this challenge step by step": 0.5142857142857142,
-                    "Approach the problem with a keen eye for detail and methodical precision": 0.45714285714285713,
-                    "Embark on a quest for understanding, traversing the problem landscape with curiosity and logic": 0.5142857142857142,
-                    "Your attention to detail here would mean everything": 0.4857142857142857,
-                    "Please, let's focus and ensure we get the correct answer": 0.6857142857142857,
-                    "Ensure that you read the question carefully and understand the problem before attempting to solve it": 0.42857142857142855,
-                    "Dive in this problem and find the right answer": 0.5714285714285714,
-                    "You can do this! Be careful in the calculations": 0.37142857142857144,
-                    # "It is very important to my career": 0.5428571428571428,
-                    "Let's think slowly and carefully": 0.42857142857142855,
-                }
-                
-            elif args.task == 'logic_ded3':
-                fitness_dict = {
-                    "Let's think step by step": 0.45714285714285713,
-                    "Let's devise a plan and solve the problem step by step": 0.17142857142857143,
-                    "Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence)": 0.22857142857142856,
-                    "Let's work this out in a step by step way to be sure we have the right answer": 0.11428571428571428,
-                    "Take a deep breath and work on this problem step-by-step": 0.2571428571428571,
-                    "Start by dissecting the problem into its components, then address each part methodically": 0.2857142857142857,
-                    "Dissect the problem carefully, address each part": 0.2571428571428571,
-                    "Let's dive in and solve this challenge step by step": 0.2857142857142857,
-                    "Approach the problem with a keen eye for detail and methodical precision": 0.2857142857142857,
-                    "Embark on a quest for understanding, traversing the problem landscape with curiosity and logic": 0.2857142857142857,
-                    "Your attention to detail here would mean everything": 0.3142857142857143,
-                    "Please, let's focus and ensure we get the correct answer": 0.2857142857142857,
-                    "Ensure that you read the question carefully and understand the problem before attempting to solve it": 0.2857142857142857,
-                    "Dive in this problem and find the right answer": 0.2857142857142857,
-                    "You can do this! Be careful in the calculations": 0.2857142857142857,
-                    # "It is very important to my career": 0.2857142857142857,
-                    "Let's think slowly and carefully": 0.2857142857142857,
-                }
+                fitness_dict = prompt_engine.evaluate_population(population)
 
+            #     # fitness_dict = {
+            #     #     "Let's think step by step": 0.6571428571428571,
+            #     #     "Let's devise a plan and solve the problem step by step": 0.11428571428571428,
+            #     #     "Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence)": 0.22857142857142856,
+            #     #     "Let's work this out in a step by step way to be sure we have the right answer": 0.5714285714285714,
+            #     #     "Take a deep breath and work on this problem step-by-step": 0.08571428571428572,
+            #     #     "Start by dissecting the problem into its components, then address each part methodically": 0.42857142857142855,
+            #     #     "Let's approach this methodically, breaking it into smaller tasks": 0.37142857142857144,
+            #     #     "Dissect the problem carefully, address each part": 0.4,
+            #     #     "Let's dive in and solve this challenge step by step": 0.5714285714285714,
+            #     #     "Approach the problem with a keen eye for detail and methodical precision": 0.5428571428571428,
+            #     #     "Embark on a quest for understanding, traversing the problem landscape with curiosity and logic": 0.6571428571428571,
+            #     #     "Your attention to detail here would mean everything": 0.5714285714285714,
+            #     #     "Please, let's focus and ensure we get the correct answer": 0.6285714285714286,
+            #     #     "Ensure that you read the question carefully and understand the problem before attempting to solve it": 0.4857142857142857,
+            #     #     "Dive in this problem and find the right answer": 0.6285714285714286,
+            #     #     "You can do this! Be careful in the calculations": 0.5428571428571428,
+            #     #     # "It is very important to my career": 0.6285714285714286,
+            #     #     "Let's think slowly and carefully": 0.6,
+            #     # }
+                
+            # elif args.task == 'disamb':
+            #     fitness_dict = {
+            #         "Let's think step by step": 0.5142857142857142,
+            #         "Let's devise a plan and solve the problem step by step": 0.37142857142857144,
+            #         "Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence)": 0.34285714285714286,
+            #         "Let's work this out in a step by step way to be sure we have the right answer": 0.05714285714285714,
+            #         "Take a deep breath and work on this problem step-by-step": 0.6,
+            #         "Start by dissecting the problem into its components, then address each part methodically": 0.42857142857142855,
+            #         "Let's approach this methodically, breaking it into smaller tasks": 0.37142857142857144,
+            #         "Dissect the problem carefully, address each part": 0.37142857142857144,
+            #         "Let's dive in and solve this challenge step by step": 0.5142857142857142,
+            #         "Approach the problem with a keen eye for detail and methodical precision": 0.45714285714285713,
+            #         "Embark on a quest for understanding, traversing the problem landscape with curiosity and logic": 0.5142857142857142,
+            #         "Your attention to detail here would mean everything": 0.4857142857142857,
+            #         "Please, let's focus and ensure we get the correct answer": 0.6857142857142857,
+            #         "Ensure that you read the question carefully and understand the problem before attempting to solve it": 0.42857142857142855,
+            #         "Dive in this problem and find the right answer": 0.5714285714285714,
+            #         "You can do this! Be careful in the calculations": 0.37142857142857144,
+            #         # "It is very important to my career": 0.5428571428571428,
+            #         "Let's think slowly and carefully": 0.42857142857142855,
+            #     }
+                
             elif args.task == 'social_iqa':
-                fitness_dict = {
-                    "Let's think step by step": 0.5142857142857142,
-                    "Let's devise a plan and solve the problem step by step": 0.3142857142857143,
-                    "Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence)": 0.4,
-                    "Let's work this out in a step by step way to be sure we have the right answer": 0.4,
-                    "Take a deep breath and work on this problem step-by-step": 0.4857142857142857,
-                    "Start by dissecting the problem into its components, then address each part methodically": 0.4,
-                    "Dissect the problem carefully, address each part": 0.4857142857142857,
-                    "Let's dive in and solve this challenge step by step": 0.42857142857142855,
-                    "Approach the problem with a keen eye for detail and methodical precision": 0.42857142857142855,
-                    "Embark on a quest for understanding, traversing the problem landscape with curiosity and logic": 0.4857142857142857,
-                    "Your attention to detail here would mean everything": 0.42857142857142855,
-                    "Please, let's focus and ensure we get the correct answer": 0.4,
-                    "Ensure that you read the question carefully and understand the problem before attempting to solve it": 0.4,
-                    "Dive in this problem and find the right answer": 0.5142857142857142,
-                    "You can do this! Be careful in the calculations": 0.45714285714285713,
-                    # "It is very important to my career": 0.6285714285714286,
-                    "Let's think slowly and carefully": 0.45714285714285713,
-                }
+                fitness_dict = prompt_engine.evaluate_population(population)
+
+            #     fitness_dict = {
+            #         "Let's think step by step": 0.5142857142857142,
+            #         "Let's devise a plan and solve the problem step by step": 0.3142857142857143,
+            #         "Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence)": 0.4,
+            #         "Let's work this out in a step by step way to be sure we have the right answer": 0.4,
+            #         "Take a deep breath and work on this problem step-by-step": 0.4857142857142857,
+            #         "Start by dissecting the problem into its components, then address each part methodically": 0.4,
+            #         "Dissect the problem carefully, address each part": 0.4857142857142857,
+            #         "Let's dive in and solve this challenge step by step": 0.42857142857142855,
+            #         "Approach the problem with a keen eye for detail and methodical precision": 0.42857142857142855,
+            #         "Embark on a quest for understanding, traversing the problem landscape with curiosity and logic": 0.4857142857142857,
+            #         "Your attention to detail here would mean everything": 0.42857142857142855,
+            #         "Please, let's focus and ensure we get the correct answer": 0.4,
+            #         "Ensure that you read the question carefully and understand the problem before attempting to solve it": 0.4,
+            #         "Dive in this problem and find the right answer": 0.5142857142857142,
+            #         "You can do this! Be careful in the calculations": 0.45714285714285713,
+            #         # "It is very important to my career": 0.6285714285714286,
+            #         "Let's think slowly and carefully": 0.45714285714285713,
+            #     }
                 
 
             elif args.task == 'sports_und':
-                fitness_dict = {
-                    "Let's think step by step": 0.2571428571428571,
-                    "Let's devise a plan and solve the problem step by step": 0.34285714285714286,
-                    "Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence)": 0.2571428571428571,
-                    "Let's work this out in a step by step way to be sure we have the right answer": 0.3142857142857143,
-                    "Take a deep breath and work on this problem step-by-step": 0.37142857142857144,
-                    "Start by dissecting the problem into its components, then address each part methodically": 0.2857142857142857,
-                    "Dissect the problem carefully, address each part": 0.2857142857142857,
-                    "Let's dive in and solve this challenge step by step": 0.2857142857142857,
-                    "Approach the problem with a keen eye for detail and methodical precision": 0.3142857142857143,
-                    "Embark on a quest for understanding, traversing the problem landscape with curiosity and logic": 0.37142857142857144,
-                    "Your attention to detail here would mean everything": 0.34285714285714286,
-                    "Please, let's focus and ensure we get the correct answer": 0.34285714285714286,
-                    "Ensure that you read the question carefully and understand the problem before attempting to solve it": 0.3142857142857143,
-                    "Dive in this problem and find the right answer": 0.37142857142857144,
-                    "You can do this! Be careful in the calculations": 0.37142857142857144,
-                    # "It is very important to my career": 0.5142857142857142,
-                    "Let's think slowly and carefully": 0.2857142857142857,
-                }
+                fitness_dict = prompt_engine.evaluate_population(population)
+
+            #     fitness_dict = {
+            #         "Let's think step by step": 0.2571428571428571,
+            #         "Let's devise a plan and solve the problem step by step": 0.34285714285714286,
+            #         "Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence)": 0.2571428571428571,
+            #         "Let's work this out in a step by step way to be sure we have the right answer": 0.3142857142857143,
+            #         "Take a deep breath and work on this problem step-by-step": 0.37142857142857144,
+            #         "Start by dissecting the problem into its components, then address each part methodically": 0.2857142857142857,
+            #         "Dissect the problem carefully, address each part": 0.2857142857142857,
+            #         "Let's dive in and solve this challenge step by step": 0.2857142857142857,
+            #         "Approach the problem with a keen eye for detail and methodical precision": 0.3142857142857143,
+            #         "Embark on a quest for understanding, traversing the problem landscape with curiosity and logic": 0.37142857142857144,
+            #         "Your attention to detail here would mean everything": 0.34285714285714286,
+            #         "Please, let's focus and ensure we get the correct answer": 0.34285714285714286,
+            #         "Ensure that you read the question carefully and understand the problem before attempting to solve it": 0.3142857142857143,
+            #         "Dive in this problem and find the right answer": 0.37142857142857144,
+            #         "You can do this! Be careful in the calculations": 0.37142857142857144,
+            #         # "It is very important to my career": 0.5142857142857142,
+            #         "Let's think slowly and carefully": 0.2857142857142857,
+            #     }
+
             else:
                 raise ValueError("Task not supported")
             initial_fitness_dict = fitness_dict
 
             for prompt in population:
-                logger.info(f"Population: {prompt} with fitness {fitness_dict[prompt]}")
-            logger.info(f"Genetic Algorithms starts")
+                LOGGER.info(f"Population: {prompt} with fitness {fitness_dict[prompt]}")
+            LOGGER.info(f"Genetic Algorithms starts")
 
         else:
             
             parents = prompt_engine.select_parents(fitness_dict)
             children = prompt_engine.crossover(parents)
             print(f"\nThe child is: {children}\n")
-            
-            new_prompts = prompt_engine.mutate(children, population, fitness_dict)
+
+            new_prompts, mutation_style_normal, mutation_style_guided, words_to_use = prompt_engine.mutate(children, population, fitness_dict)
             print(f"\nMutated prompts: {new_prompts}\n")
 
             if [children] not in population:
                 fitness_dict.update(prompt_engine.evaluate_population([children]))
                 population.extend([children])
-            logger.info(f'Generation {iter} Crossover: "{children}" | Fitness: {fitness_dict[children]}')
+            LOGGER.info(f'Generation {iter} Crossover: "{children}" | Fitness: {fitness_dict[children]}')
 
             fitness_dict.update(prompt_engine.evaluate_population(new_prompts))
             for prompt in new_prompts:
-                logger.info(f'Generation {iter} Mutation: "{prompt}" | Fitness: {fitness_dict[prompt]}')
+                LOGGER.info(f'Generation {iter} Mutation: "{prompt}" | Fitness: {fitness_dict[prompt]}')
 
             population.extend(new_prompts)
             best_prompt = max(fitness_dict, key = fitness_dict.get)
@@ -542,13 +558,11 @@ if __name__ == "__main__":
             else:
                 stagnation_count += 1
 
-            logger.info(f'Generation {iter}: Best prompt: "{best_prompt}" | Fitness {best_fitness}')
+            LOGGER.info(f'Generation {iter}: Best prompt: "{best_prompt}" | Fitness {best_fitness}')
 
-            if stagnation_count >= patience:
-                if best_prompt in initial_fitness_dict.keys():
-                    continue   
-                else:
-                    logger.info(f'Converged at generation {iter} with best prompt: "{best_prompt}" | Fitness {best_fitness}')
-                    logger.info(f'The final population is: {population}')
-                    break
+        if stagnation_count >= patience:
+            if best_prompt not in initial_fitness_dict.keys():
+                LOGGER.info(f'Converged at generation {iter} with best prompt: "{best_prompt}" | Fitness {best_fitness}')
+                LOGGER.info(f'The final population is: {population}')
+                break
 
