@@ -62,7 +62,7 @@ def generate_response(model, tokenizer, input_text):
 def mutation_dialogue(helper_model, mutation_style, prompt, use_words, words_to_use):
 
     if use_words == True:
-        socrates_input_prompt = f'''GPT4 Correct System: From now on you are Socrates and you will chat with Theaetetus. You will engage in a multi-turn dialogue to perform a mutation of a prompt. {mutation_style} Your mutation must include the words: \"{words_to_use}\". \nThe initial prompt is: \"{prompt}\".<|end_of_turn|>GPT4 Correct User: Start the dialogue by saying "Hi Theaetetus, let's work together to mutate the prompt. Make sure your final prompt is within brackets. Your final prompt has to include the the words: \"{words_to_use}\".". Then provide your mutation of the prompt within brackets and ask for Theaetetus' opinion.<|end_of_turn|>GPT4 Correct Assistant:'''
+        socrates_input_prompt = f'''GPT4 Correct System: From now on you are Socrates and you will chat with Theaetetus. You will engage in a multi-turn dialogue to perform a mutation of a prompt. {mutation_style} Your mutation must include the words: \"{words_to_use[0]}\" and \"{words_to_use[1]}\". \nThe initial prompt is: \"{prompt}\".<|end_of_turn|>GPT4 Correct User: Start the dialogue by saying "Hi Theaetetus, let's work together to mutate the prompt. Make sure your final prompt is within brackets. Your final prompt has to include the the words: \"{words_to_use[0]}\" and \"{words_to_use[1]}\". Then provide your short and concise mutation of the prompt within brackets and ask for Theaetetus' opinion.<|end_of_turn|>GPT4 Correct Assistant:'''
     else:
         socrates_input_prompt = f'''GPT4 Correct System: From now on you are Socrates and you will chat with Theaetetus. You will engage in a multi-turn dialogue to perform a mutation of a prompt. {mutation_style}\nThe initial prompt is: \"{prompt}\".<|end_of_turn|>GPT4 Correct User: Start the dialogue by saying "Hi Theaetetus, let's work together to mutate the prompt. Make sure your final prompt is within brackets.". Then provide your mutation of the prompt within brackets and ask for Theaetetus' opinion.<|end_of_turn|>GPT4 Correct Assistant:''' 
     socrates_response = helper_model.get_response(socrates_input_prompt)
@@ -71,7 +71,7 @@ def mutation_dialogue(helper_model, mutation_style, prompt, use_words, words_to_
 
 
     if use_words == True:
-        theaetetus_input_prompt = f'''GPT4 Correct System: From now on you are Theatetus and you will chat with Socrates. You will engage in a multi-turn dialogue to perform a mutation of a prompt. {mutation_style} Your mutation must include the words: \"{words_to_use}\".\nThe initial prompt is: \"{prompt}\".\nMake sure to say "Hi Socrates" in the beginning and provide your prompt within brackets.<|end_of_turn|>GPT4 Correct User: {socrates_short_response}<|end_of_turn|>GPT4 Correct Assistant:'''
+        theaetetus_input_prompt = f'''GPT4 Correct System: From now on you are Theatetus and you will chat with Socrates. You will engage in a multi-turn dialogue to perform a mutation of a prompt. {mutation_style} Your mutation must include the words:\"{words_to_use[0]}\" and \"{words_to_use[1]}\".\nThe initial prompt is: \"{prompt}\".\nMake sure to say "Hi Socrates" in the beginning and provide your short and concise prompt within brackets.<|end_of_turn|>GPT4 Correct User: {socrates_short_response}<|end_of_turn|>GPT4 Correct Assistant:'''
     else:
         theaetetus_input_prompt = f'''GPT4 Correct System: From now on you are Theatetus and you will chat with Socrates. You will engage in a multi-turn dialogue to perform a mutation of a prompt. {mutation_style}\nThe initial prompt is: \"{prompt}\".\nMake sure to say "Hi Socrates" in the beginning and provide your prompt within brackets.<|end_of_turn|>GPT4 Correct User: {socrates_short_response}<|end_of_turn|>GPT4 Correct Assistant:''' 
     theaetetus_response = helper_model.get_response(theaetetus_input_prompt)
@@ -201,11 +201,20 @@ def construct_icl_examples_aqua(samples, number_of_icl_examples, seed, instructi
 
 def contstruct_mutation_prompt(fitness_dict):
     sorted_texts = sorted(fitness_dict.items(), key = lambda x:x[1])
-    top_5 = sorted_texts[-5:]
+    top_3 = sorted_texts[-3:]
     prompt = "I have some texts along with their corresponding scores. The texts are arranged in ascending order based on their score, where higher scores indicate better quality.\n"
-    prompt += "".join([f"text: {text}\nscore: {score}\n" for text, score in top_5])
+    prompt += "".join([f"text: {text}\nscore: {score}\n" for text, score in top_3])
     prompt += "Write some words from all the texts above that you think are important for solving the problem. Write the words within brackets."
     return prompt
+
+def mutate_mutation_prompt(mutation_dict):
+    sorted_texts = sorted(mutation_dict.items(), key = lambda x:x[1])
+    top_3 = sorted_texts[-3:]
+    prompt = "I have some texts along with their corresponding scores. The texts are arranged in ascending order based on their score, where higher scores indicate better quality.\n"
+    prompt += "".join([f"text: {text}\nscore: {score}\n" for text, score in top_3])
+    prompt += "Write a new text that will have a higher score than the texts above. Write the new text within brackets."
+    return prompt
+
 
 def setup_logger(name, log_file, level=logging.INFO):
 
