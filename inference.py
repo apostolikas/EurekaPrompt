@@ -53,7 +53,7 @@ class InferenceEvalauator:
                 if self.args.model == 'starling' or self.args.model == 'openchat':
                     input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
                     input_ids = self.tokenizer(input_prompt, return_tensors="pt").input_ids.to('cuda')
-                    outputs = self.model.generate(input_ids, max_new_tokens=250, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
+                    outputs = self.model.generate(input_ids, max_new_tokens=700, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
                     response_ids = outputs[0]
                     text_output = self.tokenizer.decode(response_ids, skip_special_tokens=True)
                     text_output = text_output.split("GPT4 Correct Assistant:")[1]
@@ -65,7 +65,7 @@ class InferenceEvalauator:
                         {"role": "user", "content": model_input},
                     ]
                     gen_input = self.tokenizer.apply_chat_template(messages, return_tensors="pt").to('cuda')
-                    generated_ids = self.model.generate(gen_input, max_new_tokens = 250)
+                    generated_ids = self.model.generate(gen_input, max_new_tokens = 500)
                     decoded = self.tokenizer.batch_decode(generated_ids)
                     text_output = decoded[0]
                     lines = text_output.split('\n')  
@@ -81,7 +81,7 @@ class InferenceEvalauator:
                 elif self.args.model == 'mixtral':
                     input_prompt = f"<s> [INST] {model_input} [/INST]"
                     inputs = self.tokenizer(input_prompt, return_tensors="pt").to('cuda')
-                    outputs = model.generate(**inputs, max_new_tokens=400, pad_token_id = tokenizer.eos_token_id)
+                    outputs = model.generate(**inputs, max_new_tokens=500, pad_token_id = tokenizer.eos_token_id)
                     text_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
                     text_output = text_output.split("[/INST]")[1]
 
@@ -112,7 +112,7 @@ class InferenceEvalauator:
                 if self.args.model == 'starling' or self.args.model == 'openchat':
                     input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
                     input_ids = self.tokenizer(input_prompt, return_tensors="pt").input_ids.to('cuda')
-                    outputs = self.model.generate(input_ids, max_new_tokens=250, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
+                    outputs = self.model.generate(input_ids, max_new_tokens=500, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
                     response_ids = outputs[0]
                     text_output = self.tokenizer.decode(response_ids, skip_special_tokens=True)
                     text_output = text_output.split("GPT4 Correct Assistant:")[1]
@@ -124,7 +124,7 @@ class InferenceEvalauator:
                         {"role": "user", "content": model_input},
                     ]
                     gen_input = self.tokenizer.apply_chat_template(messages, return_tensors="pt").to('cuda')
-                    generated_ids = self.model.generate(gen_input, max_new_tokens = 250)
+                    generated_ids = self.model.generate(gen_input, max_new_tokens = 500)
                     decoded = self.tokenizer.batch_decode(generated_ids)
                     text_output = decoded[0]
                     lines = text_output.split('\n')  
@@ -158,7 +158,7 @@ class InferenceEvalauator:
                 if self.args.model == 'starling' or self.args.model == 'openchat':
                     input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
                     input_ids = self.tokenizer(input_prompt, return_tensors="pt").input_ids.to('cuda')
-                    outputs = self.model.generate(input_ids, max_new_tokens=250, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
+                    outputs = self.model.generate(input_ids, max_new_tokens=500, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
                     response_ids = outputs[0]
                     text_output = self.tokenizer.decode(response_ids, skip_special_tokens=True)
                     text_output = text_output.split("GPT4 Correct Assistant:")[1]
@@ -170,7 +170,7 @@ class InferenceEvalauator:
                         {"role": "user", "content": model_input},
                     ]
                     gen_input = self.tokenizer.apply_chat_template(messages, return_tensors="pt").to('cuda')
-                    generated_ids = self.model.generate(gen_input, max_new_tokens = 250)
+                    generated_ids = self.model.generate(gen_input, max_new_tokens = 500)
                     decoded = self.tokenizer.batch_decode(generated_ids)
                     text_output = decoded[0]
                     lines = text_output.split('\n')  
@@ -202,7 +202,7 @@ class InferenceEvalauator:
                 if self.args.model == 'starling' or self.args.model == 'openchat':
                     input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
                     input_ids = self.tokenizer(input_prompt, return_tensors="pt").input_ids.to('cuda')
-                    outputs = self.model.generate(input_ids, max_new_tokens=250, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
+                    outputs = self.model.generate(input_ids, max_new_tokens=500250, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
                     response_ids = outputs[0]
                     text_output = self.tokenizer.decode(response_ids, skip_special_tokens=True)
                     text_output = text_output.split("GPT4 Correct Assistant:")[1]
@@ -214,7 +214,7 @@ class InferenceEvalauator:
                         {"role": "user", "content": model_input},
                     ]
                     gen_input = self.tokenizer.apply_chat_template(messages, return_tensors="pt").to('cuda')
-                    generated_ids = self.model.generate(gen_input, max_new_tokens = 250)
+                    generated_ids = self.model.generate(gen_input, max_new_tokens = 500)
                     decoded = self.tokenizer.batch_decode(generated_ids)
                     text_output = decoded[0]
                     lines = text_output.split('\n')  
@@ -245,7 +245,7 @@ class InferenceEvalauator:
                 model_input = f'''Question: Can you choose the most related proverb from the list of 5 proverbs given a narrative?\nNarrative: {narrative}\nAnswer choices: {answer_choices}\nAnswer: {prompt}'''
                 input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
                 input_ids = self.tokenizer(input_prompt, return_tensors="pt").input_ids.to('cuda')
-                outputs = self.model.generate(input_ids, max_new_tokens=250, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
+                outputs = self.model.generate(input_ids, max_new_tokens=500, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
                 response_ids = outputs[0]
                 text_output = self.tokenizer.decode(response_ids, skip_special_tokens=True)
                 text_output = text_output.split("GPT4 Correct Assistant:")[1]
@@ -267,7 +267,7 @@ class InferenceEvalauator:
                 model_input = f'''Question: {question}\nSentence: {context}\nAnswer choices: {answer_choices}\nAnswer: {prompt}'''
                 input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
                 input_ids = self.tokenizer(input_prompt, return_tensors="pt").input_ids.to('cuda')
-                outputs = self.model.generate(input_ids, max_new_tokens=250, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
+                outputs = self.model.generate(input_ids, max_new_tokens=500, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
                 response_ids = outputs[0]
                 text_output = self.tokenizer.decode(response_ids, skip_special_tokens=True)
                 text_output = text_output.split("GPT4 Correct Assistant:")[1]
@@ -289,7 +289,7 @@ class InferenceEvalauator:
                 model_input = f'''Question: {question}\nContext: {context}\nAnswer choices: {answer_choices}\nAnswer: {prompt}'''
                 input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
                 input_ids = self.tokenizer(input_prompt, return_tensors="pt").input_ids.to('cuda')
-                outputs = self.model.generate(input_ids, max_new_tokens=250, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
+                outputs = self.model.generate(input_ids, max_new_tokens=500, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
                 response_ids = outputs[0]
                 text_output = self.tokenizer.decode(response_ids, skip_special_tokens=True)
                 text_output = text_output.split("GPT4 Correct Assistant:")[1]
@@ -310,7 +310,7 @@ class InferenceEvalauator:
                 model_input = f'''Question: {question}\nAnswer choices: {answer_choices}\nAnswer: {prompt}'''
                 input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
                 input_ids = self.tokenizer(input_prompt, return_tensors="pt").input_ids.to('cuda')
-                outputs = self.model.generate(input_ids, max_new_tokens=250, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
+                outputs = self.model.generate(input_ids, max_new_tokens=500, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
                 response_ids = outputs[0]
                 text_output = self.tokenizer.decode(response_ids, skip_special_tokens=True)
                 text_output = text_output.split("GPT4 Correct Assistant:")[1]
@@ -326,7 +326,7 @@ class InferenceEvalauator:
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='Settings for the Inference')
-    parser.add_argument('--task', default='sports_und', type=str, help='Task to be solved. Choose one of: [gsm8k, csqa]')
+    parser.add_argument('--task', default='csqa', type=str, help='Task to be solved. Choose one of: [gsm8k, csqa]')
     parser.add_argument('--use_icl_examples', default=False, type=bool, help='whether to use in-context learning examples or not')
     parser.add_argument('--num_icl_examples', default=1, type=int, help='number of in-context learning examples used for evaluation')
     parser.add_argument('--model', default='starling', type=str, help='which model to use')
