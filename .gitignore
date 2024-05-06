@@ -6,3 +6,6 @@ __pycache__/
 /evo_logs
 /inference_logs
 *.png
+attention_time.py
+time.py
+test.py
