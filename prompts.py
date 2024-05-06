@@ -54,6 +54,13 @@ csqa_initial_prompts = [
     "Embark on a quest for understanding, traversing the problem landscape with curiosity and logic",
     "Your attention to detail here would mean everything",
     "Please, let's focus and ensure we nail this down",
+    "Dive in this problem and find the right answer",
+    "You can do this! Be careful in the calculations",
+    "Let's think slowly and carefully",
+    "Let's think logically to derive the correct answer",
+    "Focus on the challenge",
+    # "Read the question and find the right answer",
+    "Let's put our thoughts in order",
 ]
 
 strategyqa_initial_prompts = [
@@ -81,7 +88,6 @@ bb_initial_prompts = [
     "Let's work this out in a step by step way to be sure we have the right answer",
     "Take a deep breath and work on this problem step-by-step",
     "Start by dissecting the problem into its components, then address each part methodically",
-    "Dissect the problem carefully, address each part",
     "Let's dive in and solve this challenge step by step",
     "Approach the problem with a keen eye for detail and methodical precision",
     "Embark on a quest for understanding, traversing the problem landscape with curiosity and logic",
@@ -91,6 +97,10 @@ bb_initial_prompts = [
     "Dive in this problem and find the right answer",
     "You can do this! Be careful in the calculations",
     "Let's think slowly and carefully",
+    "Let's think logically to derive the correct answer",
+    "Focus on the challenge",
+    "Read the question and find the right answer",
+    "Let's put our thoughts in order",
 ]
 
 
@@ -163,11 +173,11 @@ gsm8k_inference_prompts = [
     "Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a plan. Then, let's carry out the plan, calculate the intermediate results (pay attention to calculation and common sense), solve the problem step by step, and show the answer",
     "Let's work this out in a step by step way to be sure we have the right answer",
     "Take a deep breath and work on this problem step-by-step",
-    "Break this down",
-    "A little bit of arithmetic and a logical approach will help us quickly arrive at the solution to this problem",
-    "Let's combine our numerical command and clear thinking to quickly and accurately decipher the answer",
+    # "Break this down",
+    # "A little bit of arithmetic and a logical approach will help us quickly arrive at the solution to this problem",
+    # "Let's combine our numerical command and clear thinking to quickly and accurately decipher the answer",
     # Prompt obtained by evoalg
-    "Focus on strategic thinking to swiftly find the accurate solution"
+    "Focus on strategic thinking to swiftly find the accurate solution",
 ]
 
 svamp_inference_prompts = [
@@ -176,11 +186,11 @@ svamp_inference_prompts = [
     "Let's first understand the problem, extract relevant variables and their corresponding numerals, and make a complete plan. Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer",
     "Let's work this out in a step by step way to be sure we have the right answer",
     "Take a deep breath and work on this problem step-by-step",
-    "Break this down",
-    "A little bit of arithmetic and a logical approach will help us quickly arrive at the solution to this problem",
-    "Let's combine our numerical command and clear thinking to quickly and accurately decipher the answer",
+    # "Break this down",
+    # "A little bit of arithmetic and a logical approach will help us quickly arrive at the solution to this problem",
+    # "Let's combine our numerical command and clear thinking to quickly and accurately decipher the answer",
     # Prompt obtained by evoalg
-    "Let's be very precise and accurate in our calculations: Compute the solution with a stepwise approach"
+    "Let's be very precise and accurate in our calculations: Compute the solution with a stepwise approach",
 ]
 
 csqa_inference_prompts = [
@@ -201,7 +211,8 @@ abs_nar_inference_prompts = [
     "Let's work this out in a step by step way to be sure we have the right answer",
     "Take a deep breath and work on this problem step-by-step",
     # Prompt obtained by evoalg
-    "Let's think slowly and carefully, collect data, strategize, and maintain logical coherence and practicality while engaging with the question"
+    "Carefully derive the logical conclusion",
+
 ]
 
 causal_judg_inference_prompts = [
@@ -222,8 +233,9 @@ date_under_inference_prompts = [
     "Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a complete plan.Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer",
     "Let's work this out in a step by step way to be sure we have the right answer",
     "Take a deep breath and work on this problem step-by-step",
+    "Be realistic and practical like a detective, and use evidence to solve the problem in a logical, step-by-step approach.",
     # Prompt obtained by evoalg
-    "Swiftly traverse the problem landscape, employing strategic thinking and a keen attention to detail, to ensure a precise and accurate resolution"
+    "Let's unravel the enigma step by step, ensuring each action adheres to the proper course, as we advance together"
 ]
 
 social_iqa_inference_prompts = [
@@ -234,7 +246,7 @@ social_iqa_inference_prompts = [
     "Let's work this out in a step by step way to be sure we have the right answer",
     "Take a deep breath and work on this problem step-by-step",
     # Prompt obtained by evoalg
-    "Quick-thinking and strategic instincts for accurate calculations"
+    "Quick-thinking and strategic instincts for accurate calculations",
 ]
 
 sports_und_inference_prompts = [
@@ -244,8 +256,21 @@ sports_und_inference_prompts = [
     "Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a complete plan.Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer",
     "Let's work this out in a step by step way to be sure we have the right answer",
     "Take a deep breath and work on this problem step-by-step",
+    "Break down the problem into steps and start solving it.",
     # Prompt obtained by evoalg
-    "Embark on a journey to uncover knowledge, igniting curiosity and logic, while maintaining a positive mindset and focusing on understanding the problem, devising a strategy with organized data to dissect challenges into smaller parts, navigating the landscape methodically, and achieving both favorable outcomes and exceptional results, all while being deliberate in our approach and prioritizing strategic thinking"
+    "Step by step problem-solving"
+]
+
+disamb_inference_prompts = [
+    "Let's think step by step",
+    "Let's devise a plan and solve the problem step by step",
+    "Let's first prepare relevant information and make a plan. Then, let's answer the question step by step (pay attention to commonsense and logical coherence)",
+    "Let's first understand the problem, extract relevant variables and their corresponding numerals, and devise a complete plan.Then, let's carry out the plan, calculate intermediate variables (pay attention to correct numerical calculation and commonsense), solve the problem step by step, and show the answer",
+    "Let's work this out in a step by step way to be sure we have the right answer",
+    "Take a deep breath and work on this problem step-by-step",
+    "First, let us ponder and start off by taking our time, going step by step, and using our logic to approach this before we dive into the answer.",
+    # Prompt obtained by evoalg
+    "Read the question thoroughly, comprehend the problem, and let's strategize a step-by-step approach to solve it",
 ]
 
 
@@ -266,7 +291,23 @@ def load_inference_prompts(task):
         return social_iqa_inference_prompts
     elif task == 'sports_und':
         return sports_und_inference_prompts
+    elif task == 'disamb':
+        return disamb_inference_prompts
     else:
         raise ValueError("Task not supported")
     
+
+def load_mutation_prompts(task):
+    if task == 'gsm8k':
+        return gsm8k_mutation_styles
+    elif task == 'svamp':
+        return svamp_mutation_styles
+    elif task == 'csqa':
+        return csqa_mutation_styles
+    elif task in ['abs_nar', 'causal_judg', 'date_under', 'disamb', 'social_iqa', 'sports_und']:
+        return bb_mutation_styles
+    else:
+        raise ValueError("Task not supported")
+    
+
     
