@@ -9,3 +9,4 @@ __pycache__/
 attention_time.py
 time.py
 test.py
+*.log
