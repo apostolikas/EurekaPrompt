@@ -119,90 +119,95 @@ if __name__ == '__main__':
     model = AutoModelForCausalLM.from_pretrained("berkeley-nest/Starling-LM-7B-alpha", torch_dtype = torch.float16, device_map = 'auto')
 
     model = SocraticGPT(model, tokenizer)
+    crossover = True
+    mutation = False
+    tasks = ['gsm8k', 'svamp', 'csqa', 'abs_nar', 'disamb', 'sports_und', 'date_under']
 
-    task = 'gsm8k'
+    for task in tasks:
 
-    transet, testset = load_data(task)
+        print(f"Task: {task}")
 
-    initial_population = load_inference_prompts(task)
-    mutation_styles = load_mutation_prompts(task)
+        transet, testset = load_data(task)
 
-    avg_child_socratic = []
-    avg_child_normal = []
-    avg_mut_socratic = []
-    avg_mut_normal = []
-    
-    crossover = False
-    mutation = True
+        initial_population = load_inference_prompts(task)
+        mutation_styles = load_mutation_prompts(task)
 
-    if crossover:
+        avg_child_socratic = []
+        avg_child_normal = []
+        avg_mut_socratic = []
+        avg_mut_normal = []
+        
+        crossover = True
+        mutation = False
 
-        for parent0, parent1 in combinations(initial_population, 2):
+        if crossover:
 
-            print(f"Parent 1: {parent0}")
-            print(f"Parent 2: {parent1}")
+            for parent0, parent1 in combinations(initial_population, 2):
 
-            final_prompt = crossover_dialogue(model, parent0, parent1)
-            print(f"LLM Conversation output: {final_prompt}")
+                print(f"Parent 1: {parent0}")
+                print(f"Parent 2: {parent1}")
 
-            socratic_child = final_prompt[-1]
-            print(f'The Socratic child prompt is: "{socratic_child}"')
-            acc0 = evaluate_prompt(model, task, testset, socratic_child)
-            print(f'Accuracy with Socratic child: {acc0}')
+                final_prompt = crossover_dialogue(model, parent0, parent1)
+                print(f"LLM Conversation output: {final_prompt}")
 
-            avg_child_socratic.append(acc0)
+                socratic_child = final_prompt[-1]
+                print(f'The Socratic child prompt is: "{socratic_child}"')
+                acc0 = evaluate_prompt(model, task, testset, socratic_child)
+                print(f'Accuracy with Socratic child: {acc0}')
 
-            input_text = f'''GPT4 Correct System: You will help me perform a crossover of two parent texts for an evolutionary algorithm. The child text has to be one sentence that will combine elements from both parent texts. \nParent1: \"[{parent0}]\" \nParent2: \"[{parent1}]\".\nThe child text has to be within brackets.<|end_of_turn|>GPT4 Correct User: Provide your new child text within brackets.<|end_of_turn|>GPT4 Correct Assistant:<|end_of_turn|>'''
-            response_text = model.get_response(input_text)
-            pattern = r'\[([^\]]+)\]'
-            final_prompt = re.findall(pattern, response_text)
-            child = final_prompt[-1]
-            print(f"The normal child prompt is: {child}")
-            acc1 = evaluate_prompt(model, task, testset, child)
-            print(f'Accuracy with normal child: {acc1}')
-            print()
+                avg_child_socratic.append(acc0)
 
-            avg_child_normal.append(acc1)
-
-        print(f"Average accuracy for Socratic child: {sum(avg_child_socratic)/len(avg_child_socratic)}")
-        print(f"Average accuracy for normal child: {sum(avg_child_normal)/len(avg_child_normal)}")
-
-
-    if mutation:
-
-        for i, prompt in enumerate(initial_population):
-
-            for mutation_style in mutation_styles:
-
-                # mutation_style = random.choice(mutation_styles)
-                print(f"Mutation style: {mutation_style}")
-
-                input_text = f'''GPT4 Correct System: You will help me to perform a mutation of a prompt. {mutation_style}\nThe initial prompt is: \"{prompt}\".<|end_of_turn|>GPT4 Correct User: Provide your mutation of the prompt within brackets.<|end_of_turn|>GPT4 Correct Assistant:''' 
+                input_text = f'''GPT4 Correct System: You will help me perform a crossover of two parent texts for an evolutionary algorithm. The child text has to be one sentence that will combine elements from both parent texts. \nParent1: \"[{parent0}]\" \nParent2: \"[{parent1}]\".\nThe child text has to be within brackets.<|end_of_turn|>GPT4 Correct User: Provide your new child text within brackets.<|end_of_turn|>GPT4 Correct Assistant:<|end_of_turn|>'''
                 response_text = model.get_response(input_text)
                 pattern = r'\[([^\]]+)\]'
-                try:
-                    final_prompt = re.findall(pattern, response_text)
-                    mutated_prompt = final_prompt[-1]
-                    print(f"Normal: {type(final_prompt)} The mutated child prompt is: {mutated_prompt}")
-                    acc3 = evaluate_prompt(model, task, testset, mutated_prompt)
-                    print(f'Accuracy with normal mutation: {acc3}')
-                    avg_mut_normal.append(acc3)
+                final_prompt = re.findall(pattern, response_text)
+                child = final_prompt[-1]
+                print(f"The normal child prompt is: {child}")
+                acc1 = evaluate_prompt(model, task, testset, child)
+                print(f'Accuracy with normal child: {acc1}')
+                print()
+
+                avg_child_normal.append(acc1)
+
+            print(f"Average accuracy for Socratic child: {sum(avg_child_socratic)/len(avg_child_socratic)}")
+            print(f"Average accuracy for normal child: {sum(avg_child_normal)/len(avg_child_normal)}")
 
 
-                    llm_conversation_mutated = mutation_dialogue(model, mutation_style, prompt, False, None)
-                    if isinstance(llm_conversation_mutated, list):
-                        theaetetus_mutated_child = llm_conversation_mutated[-1]
-                    print(f"The Socratic mutated child prompt is: {theaetetus_mutated_child}")
-                    acc2 = evaluate_prompt(model, task, testset, theaetetus_mutated_child)
-                    print(f'Accuracy with Socratic mutation: {acc2}')
+        if mutation:
 
-                    avg_mut_socratic.append(acc2)
+            for i, prompt in enumerate(initial_population):
 
-                except:
-                    print("Couldn't provide mutated prompts within brackets")
-                    continue
-                
-        print(f"Average accuracy for Socratic mutation: {sum(avg_mut_socratic)/len(avg_mut_socratic)}")
-        print(f"Average accuracy for normal mutation: {sum(avg_mut_normal)/len(avg_mut_normal)}")
+                for mutation_style in mutation_styles:
 
-    
+                    # mutation_style = random.choice(mutation_styles)
+                    print(f"Mutation style: {mutation_style}")
+
+                    input_text = f'''GPT4 Correct System: You will help me to perform a mutation of a prompt. {mutation_style}\nThe initial prompt is: \"{prompt}\".<|end_of_turn|>GPT4 Correct User: Provide your mutation of the prompt within brackets.<|end_of_turn|>GPT4 Correct Assistant:''' 
+                    response_text = model.get_response(input_text)
+                    pattern = r'\[([^\]]+)\]'
+                    try:
+                        final_prompt = re.findall(pattern, response_text)
+                        mutated_prompt = final_prompt[-1]
+                        print(f"Normal: {type(final_prompt)} The mutated child prompt is: {mutated_prompt}")
+                        acc3 = evaluate_prompt(model, task, testset, mutated_prompt)
+                        print(f'Accuracy with normal mutation: {acc3}')
+                        avg_mut_normal.append(acc3)
+
+
+                        llm_conversation_mutated = mutation_dialogue(model, mutation_style, prompt, False, None)
+                        if isinstance(llm_conversation_mutated, list):
+                            theaetetus_mutated_child = llm_conversation_mutated[-1]
+                        print(f"The Socratic mutated child prompt is: {theaetetus_mutated_child}")
+                        acc2 = evaluate_prompt(model, task, testset, theaetetus_mutated_child)
+                        print(f'Accuracy with Socratic mutation: {acc2}')
+
+                        avg_mut_socratic.append(acc2)
+
+                    except:
+                        print("Couldn't provide mutated prompts within brackets")
+                        continue
+                    
+            print(f"Average accuracy for Socratic mutation: {sum(avg_mut_socratic)/len(avg_mut_socratic)}")
+            print(f"Average accuracy for normal mutation: {sum(avg_mut_normal)/len(avg_mut_normal)}")
+
+        
