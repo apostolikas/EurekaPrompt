@@ -264,7 +264,8 @@ class InferenceEvalauator:
                 context = sample['input']
                 label = sample['label']
                 answer_choices = sample['answer_choices']
-                model_input = f'''Question: {question}\nSentence: {context}\nAnswer choices: {answer_choices}\nAnswer: {prompt}'''
+                model_input = f'''Clarify the meaning of sentences with ambiguous pronouns.\nQuestion: {context}\nAnswer choices: {answer_choices}\nAnswer: {prompt}\n<COMPLETE>'''
+                # model_input = f'''Question: {question}\nSentence: {context}\nAnswer choices: {answer_choices}\nAnswer: {prompt}'''
                 input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
                 input_ids = self.tokenizer(input_prompt, return_tensors="pt").input_ids.to('cuda')
                 outputs = self.model.generate(input_ids, max_new_tokens=500, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
@@ -296,8 +297,8 @@ class InferenceEvalauator:
                 result = evaluate_CSQA(text_output, label)
                 results.append(result)
                 accuracy += result
-
-        elif self.args.task == 'social_iqa' or self.args.task == 'sports_und' or self.args.task == 'date_under' or self.args.task == 'causal_judg':
+        
+        elif self.args.task == 'date_under':
 
             num_of_samples = len(self.testset)
             random.seed(self.args.seed)
@@ -307,7 +308,50 @@ class InferenceEvalauator:
                 question = sample['input']
                 label = sample['label']
                 answer_choices = sample['answer_choices']
-                model_input = f'''Question: {question}\nAnswer choices: {answer_choices}\nAnswer: {prompt}'''
+                model_input = f'''Infer the date from the context.\nQuestion: {question}\nAnswer choices: {answer_choices}\nAnswer: {prompt}\n<COMPLETE>'''
+                input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
+                input_ids = self.tokenizer(input_prompt, return_tensors="pt").input_ids.to('cuda')
+                outputs = self.model.generate(input_ids, max_new_tokens=500, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
+                response_ids = outputs[0]
+                text_output = self.tokenizer.decode(response_ids, skip_special_tokens=True)
+                text_output = text_output.split("GPT4 Correct Assistant:")[1]
+                result = evaluate_CSQA(text_output, label)
+                results.append(result)
+                accuracy += result    
+
+        elif self.args.task == 'sports_und':
+
+            num_of_samples = len(self.testset)
+            random.seed(self.args.seed)
+            samples = random.sample(self.testset, num_of_samples)
+
+            for i, sample in enumerate(tqdm(samples)):
+                question = sample['input']
+                label = sample['label']
+                answer_choices = sample['answer_choices']
+                model_input = f'''Question: {question}\nAnswer choices: {answer_choices}\nAnswer: {prompt}\n'''
+                # model_input = f'''Determine whether an artificially constructed sentence relating to sports is plausible or not.\nQuestion: {question}\nAnswer choices: {answer_choices}\nAnswer: {prompt}\n<COMPLETE>'''
+                input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
+                input_ids = self.tokenizer(input_prompt, return_tensors="pt").input_ids.to('cuda')
+                outputs = self.model.generate(input_ids, max_new_tokens=500, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
+                response_ids = outputs[0]
+                text_output = self.tokenizer.decode(response_ids, skip_special_tokens=True)
+                text_output = text_output.split("GPT4 Correct Assistant:")[1]
+                result = evaluate_CSQA(text_output, label)
+                results.append(result)
+                accuracy += result     
+
+        elif self.args.task == 'causal_judg':         
+
+            num_of_samples = len(self.testset)
+            random.seed(self.args.seed)
+            samples = random.sample(self.testset, num_of_samples)
+
+            for i, sample in enumerate(tqdm(samples)):
+                question = sample['input']
+                label = sample['label']
+                answer_choices = sample['answer_choices']
+                model_input = f'''Answer questions about causal attribution.\nQuestion: {question}\nAnswer choices: {answer_choices}\nAnswer: {prompt}\n<COMPLETE>'''
                 input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
                 input_ids = self.tokenizer(input_prompt, return_tensors="pt").input_ids.to('cuda')
                 outputs = self.model.generate(input_ids, max_new_tokens=500, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
@@ -317,6 +361,28 @@ class InferenceEvalauator:
                 result = evaluate_CSQA(text_output, label)
                 results.append(result)
                 accuracy += result
+
+
+        # elif self.args.task == 'social_iqa' or self.args.task == 'sports_und' or self.args.task == 'date_under' or self.args.task == 'causal_judg':
+
+        #     num_of_samples = len(self.testset)
+        #     random.seed(self.args.seed)
+        #     samples = random.sample(self.testset, num_of_samples)
+
+        #     for i, sample in enumerate(tqdm(samples)):
+        #         question = sample['input']
+        #         label = sample['label']
+        #         answer_choices = sample['answer_choices']
+        #         model_input = f'''Question: {question}\nAnswer choices: {answer_choices}\nAnswer: {prompt}'''
+        #         input_prompt = f'''GPT4 Correct User: {model_input}<|end_of_turn|>GPT4 Correct Assistant:'''
+        #         input_ids = self.tokenizer(input_prompt, return_tensors="pt").input_ids.to('cuda')
+        #         outputs = self.model.generate(input_ids, max_new_tokens=500, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
+        #         response_ids = outputs[0]
+        #         text_output = self.tokenizer.decode(response_ids, skip_special_tokens=True)
+        #         text_output = text_output.split("GPT4 Correct Assistant:")[1]
+        #         result = evaluate_CSQA(text_output, label)
+        #         results.append(result)
+        #         accuracy += result
 
         accuracy = accuracy/num_of_samples
 
